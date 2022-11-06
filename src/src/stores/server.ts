@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 export const useServerStore = defineStore("server", () => {
     const _SERVER_DEF = "NULL"
@@ -8,34 +8,23 @@ export const useServerStore = defineStore("server", () => {
     /**
      * @returns 该参数是否未设置
      */
-    function isNull(): boolean {
-        return _server.value == _SERVER_DEF
-    }
+    const isNull = computed(() => _server.value == _SERVER_DEF)
 
     /**
-     * 清除该参数的设置
+     * set
      */
-    function clear() {
-        _server.value = _SERVER_DEF
-    }
+    const get = computed(() => _server.value)
 
     /**
-     *  set
+     *  set, 如果传入null或者不传参数, 将清除设置的值
      */
     function set(str?: string) {
         if (str != undefined && str != null && str.length) {
             _server.value = str
         } else {
-            clear()
+            _server.value = _SERVER_DEF
         }
     }
 
-    /**
-     * get
-     */
-    function get(): string {
-        return _server.value
-    }
-
-    return { isNull, clear, get, set }
+    return { isNull, set, get }
 })

@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api'
-import { useServerStore } from "../store/server";
-
+import { useServerStore } from "../stores/server";
+import { openWithSystemBrower } from "../common/api"
 const addr = useServerStore()
 
 function getOrOpen() {
-    if (addr.isNull()) {
-        console.log("get")
+    if (addr.isNull) {
+        get()
     } else {
-        console.log("open")
+        openWithSystemBrower(addr.get).then()
     }
-}
 
-function open(url: string) {
 }
 
 function get() {
@@ -23,13 +21,11 @@ get()
 </script>
 
 <template>
-    <a class="md:flex max-w-auto hover:bg-gray-300" @click="getOrOpen">
-        <button>{{ addr.get() }}</button>
-    </a>
+    <button @click="getOrOpen">{{ addr.get }}</button>
 </template>
 
 <style scoped>
-a {
-    font-size: 0.2rem;
+button {
+    font-size: 0.1rem;
 }
 </style>
