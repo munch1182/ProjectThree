@@ -28,6 +28,12 @@ simple-log = "1.6"
 
 lazy_static = "1.4"
 
+hyper = "0.14"
+tower = "0.4"
+tower-http = { version = "0.3", features = ["map-request-body", "util"] }
+
+chrono = "0.4"
+
 [features]
 # by default Tauri runs in production mode
 # when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL

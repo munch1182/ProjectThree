@@ -1,5 +1,7 @@
 use std::process::Command;
 
+use crate::app::App;
+
 use super::basebean::BaseBean;
 use axum::{extract::Path, routing::get, Json, Router};
 use log::info;
@@ -10,8 +12,8 @@ pub fn create_router() -> Router {
         .route("/cmd/:type/:content", get(cmd_bean))
 }
 
-async fn root() -> Json<BaseBean<&'static str>> {
-    Json(BaseBean::success().data("success"))
+async fn root() -> Json<BaseBean<i64>> {
+    Json(BaseBean::success().data(App::get_server_start_time()))
 }
 
 fn wrapper<D: Copy>(bean: BaseBean<D>) -> Json<BaseBean<D>> {
