@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import Status from "./components/Status.vue";
-
+import Content from "./components/Content.vue";
+import BottomStatus from "./components/BootomStatus.vue";
 </script>
 
 <template>
-  <div>
-    <header>
-      tauri
-    </header>
+  <div class="flex  flex-col-reverse h-screen">
     <footer>
-      <Status />
+      <BottomStatus />
     </footer>
+    <article class="flex flex-col flex-grow w-full">
+      <Content />
+    </article>
+
   </div>
 </template>

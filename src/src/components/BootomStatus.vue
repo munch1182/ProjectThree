@@ -21,11 +21,11 @@ get()
 </script>
 
 <template>
-    <button @click="getOrOpen">{{ addr.get }}</button>
+    <div class="flex flex-row-reverse px-4 py-2">
+        <button @click="getOrOpen" class="text-xs text-gray-400">{{ addr.get }}</button>
+    </div>
 </template>
 
 <style scoped>
-button {
-    font-size: 0.1rem;
-}
+
 </style>
