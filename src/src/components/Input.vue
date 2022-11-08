@@ -25,6 +25,8 @@ function delay(fn: () => void) {
     <div>
         <input v-model.trim="searchValue"
             class="focus:outline-none border-cyan-300 border-2 rounded-lg px-2 py-1 w-1/3">
+        <br>
+        {{ searchValue }}
     </div>
 </template>
 

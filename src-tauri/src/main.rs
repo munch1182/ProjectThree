@@ -9,6 +9,7 @@ mod server;
 
 use ::log::{error, info};
 use app::App;
+use tauri::{AppHandle, Manager, Window, WindowBuilder};
 
 fn main() {
     log::init_log(); // 初始化日志
@@ -19,12 +20,47 @@ fn main() {
 }
 
 fn create_tauri() {
-    info!("create tauri.");
     let tauri = tauri::Builder::default() // 创建UI
-        .invoke_handler(tauri::generate_handler![server_addr, log_from_js]) //只提供这些指令, 其它的功能由服务提供
+        .setup(|app| {
+            if let Some(win) = app.get_window("splash") {
+                shadow_winow(win)
+            }
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            server_addr,
+            log_from_js,
+            create_window
+        ]) //只提供这些指令, 其它的功能由服务提供
         .run(tauri::generate_context!()); // 如果没有dist, 就新建一个dist, 该dist应该指向前端的正式打包文件夹
     if let Err(e) = tauri {
         error!("error tauri: {}", e);
+    }
+}
+
+/**
+ * 给创建window附上阴影, ui仍指向router
+ */
+#[tauri::command]
+async fn create_window(handle: AppHandle, lebal: String, router: String) -> bool {
+    info!("create_window:{},{}", lebal, router);
+    if let Ok(url) = router.parse() {
+        let window = WindowBuilder::new(&handle, lebal, tauri::WindowUrl::App(url))
+            .decorations(false)
+            .build(); // app本地, url要使用External
+        match window {
+            Ok(win) => {
+                shadow_winow(win);
+                return true;
+            }
+            Err(e) => error!("{}", e),
+        }
+    }
+    false
+}
+fn shadow_winow(win: Window) {
+    if let Err(e) = window_shadows::set_shadow(&win, true) {
+        info!("error to set window shadeow: {}", e);
     }
 }
 

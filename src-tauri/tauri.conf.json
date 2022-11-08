@@ -54,11 +54,13 @@
     },
     "windows": [
       {
+        "label": "splash",
         "fullscreen": false,
         "height": 600,
         "resizable": true,
         "title": "P3",
-        "width": 800
+        "width": 800,
+        "decorations": false
       }
     ]
   }

@@ -10,7 +10,6 @@ function getOrOpen() {
     } else {
         openWithSystemBrower(addr.get).then()
     }
-
 }
 
 function get() {
