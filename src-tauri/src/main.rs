@@ -22,8 +22,8 @@ fn main() {
 fn create_tauri() {
     let tauri = tauri::Builder::default() // 创建UI
         .setup(|app| {
-            if let Some(win) = app.get_window("splash") {
-                shadow_winow(win)
+            if let Some(main) = app.get_window("/main") {
+                shadow_winow(main);
             }
             Ok(())
         })
@@ -39,25 +39,23 @@ fn create_tauri() {
 }
 
 /**
- * 给创建window附上阴影, ui仍指向router
+ * 创建window并附上阴影, ui仍指向router
  */
 #[tauri::command]
 async fn create_window(handle: AppHandle, lebal: String, router: String) -> bool {
     info!("create_window:{},{}", lebal, router);
     if let Ok(url) = router.parse() {
-        let window = WindowBuilder::new(&handle, lebal, tauri::WindowUrl::App(url))
+        let build = WindowBuilder::new(&handle, lebal, tauri::WindowUrl::App(url)) // app本地, url要使用External
             .decorations(false)
-            .build(); // app本地, url要使用External
-        match window {
-            Ok(win) => {
-                shadow_winow(win);
-                return true;
-            }
-            Err(e) => error!("{}", e),
+            .build();
+        if let Ok(win) = build {
+            shadow_winow(win);
+            return true;
         }
     }
     false
 }
+
 fn shadow_winow(win: Window) {
     if let Err(e) = window_shadows::set_shadow(&win, true) {
         info!("error to set window shadeow: {}", e);

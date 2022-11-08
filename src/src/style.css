@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root{
+    --graw-color:#ececec;
+    --nav-color: #eceae8;
+    --content-color: #f5f5f5;
+    --title-bar-height: 4rem;
+    --window-menu-height: 2rem;
+}
+
+.line-h{
+    height: 1px;
+    background-color: var(--graw-color);
+}
+.line-w{
+    width: 1px;
+    background-color: var(--graw-color);
+}

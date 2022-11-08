@@ -3,6 +3,7 @@ import Main from "../components/Main.vue"
 
 const routes = [
     { path: '/', component: Main },
+    { path: '/main', redirect: '/' },
     { path: '/aaaa', component: Main }
 ]
 

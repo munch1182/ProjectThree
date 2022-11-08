@@ -1,6 +1,6 @@
 @font-face {
   font-family: "iconfont"; /* Project id  */
-  src: url('iconfont.ttf?t=1667891098735') format('truetype');
+  src: url('iconfont.ttf?t=1667923302735') format('truetype');
 }
 
 .iconfont {
@@ -11,8 +11,8 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.icon-xiaoniao:before {
-  content: "\e6b2";
+.icon-minimizing:before {
+  content: "\e621";
 }
 
 .icon-close:before {
@@ -21,17 +21,5 @@
 
 .icon-pin:before {
   content: "\e75d";
-}
-
-.icon-set:before {
-  content: "\e76c";
-}
-
-.icon-sami-select:before {
-  content: "\e7b1";
-}
-
-.icon-search:before {
-  content: "\e7b3";
 }
 

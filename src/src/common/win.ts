@@ -1,6 +1,5 @@
 import { WebviewWindow, appWindow } from "@tauri-apps/api/window";
 import { invoke } from '@tauri-apps/api'
-import log from "./log";
 
 /**
  * 
@@ -19,7 +18,7 @@ function getWinByRouter(router: string): WebviewWindow | null {
  * @returns 新建即创建
  */
 function newWinow(router: string, lebal: string = router) {
-    invoke('create_window', { lebal, router }).then(async () => await currWin().setDecorations(false));
+    invoke('create_window', { lebal, router }).then();
 }
 
 /**
@@ -27,10 +26,7 @@ function newWinow(router: string, lebal: string = router) {
  * @returns win的label
  */
 function url2Label(router: string): string {
-    if (router == "/") { // 启动页splash在tauri的配置文件中
-        return "splash"
-    }
-    return router
+    return router // 启动页/别名main
 }
 
 /**

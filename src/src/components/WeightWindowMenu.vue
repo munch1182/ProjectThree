@@ -19,12 +19,12 @@ function pinWindow() {
 </script>
 
 <template>
-    <div class="flex">
+    <div class="flex h-[var(--window-menu-height)]">
         <div @click="pinWindow" class="btn_win ">
             <i class="iconfont icon-pin"></i>
         </div>
         <div @click="minimizeWindow" class="btn_win">
-            <i class="iconfont icon-sami-select"></i>
+            <i class="iconfont icon-minimizing"></i>
         </div>
         <div @click="closeWindow" class="btn_win">
             <i class="iconfont icon-close"></i>

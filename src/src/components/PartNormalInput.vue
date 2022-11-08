@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue';
 
 const searchValue = ref("")
+const inputValue = ref("")
 
 watch(searchValue, (newValue) => delay(() => input(newValue)))
 
@@ -22,14 +23,13 @@ function delay(fn: () => void) {
 </script>
 
 <template>
-    <div>
-        <input v-model.trim="searchValue"
-            class="focus:outline-none border-cyan-300 border-2 rounded-lg px-2 py-1 w-1/3">
-        <br>
-        {{ searchValue }}
+    <div class="flex flex-col h-full">
+        <div class="flex-grow">{{ inputValue }}</div>
+        <div class="line-h"></div>
+        <div class="p-4 h-32">
+            <!-- // 双次回车(trim)/alt+回车输入完成 -->
+            <textarea v-model.trim="searchValue"
+                class="px-2 w-full h-full resize-none focus:outline-none bg-[var(--content-color)]"></textarea>
+        </div>
     </div>
 </template>
-
-<style scoped>
-
-</style>

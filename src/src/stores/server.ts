@@ -13,7 +13,7 @@ export const useServerStore = defineStore("server", () => {
     /**
      * set
      */
-    const get = computed(() => _server.value)
+    const get = computed(() => _server.value.replace("localhost:", ""))
 
     /**
      *  set, 如果传入null或者不传参数, 将清除设置的值
