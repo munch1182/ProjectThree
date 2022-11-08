@@ -4,7 +4,6 @@
 )]
 
 mod app;
-mod appresult;
 mod log;
 mod server;
 

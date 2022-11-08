@@ -2,7 +2,7 @@ mod api;
 mod basebean;
 
 use crate::app::App;
-use crate::appresult::{AppError, AppResult};
+use anyhow::{anyhow, Result};
 use axum::response::Response;
 use axum::{
     body::{Body, Bytes},
@@ -18,11 +18,11 @@ use log::{debug, error, info};
 pub fn create_server() {
     info!("create tokio env.");
     if let Err(e) = create_tokio() {
-        error!("{}", e.msg)
+        error!("{}", e)
     }
 }
 
-fn create_tokio() -> AppResult<()> {
+fn create_tokio() -> Result<()> {
     let tokio = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?;
@@ -30,7 +30,7 @@ fn create_tokio() -> AppResult<()> {
     tokio.block_on(create_axum())
 }
 
-async fn create_axum() -> AppResult<()> {
+async fn create_axum() -> Result<()> {
     info!("create axum.");
 
     let app = api::create_router().layer(middleware::from_fn(log_req_res));
@@ -45,7 +45,7 @@ async fn create_axum() -> AppResult<()> {
 
     if let Err(e) = result.await {
         info!("error start server.");
-        return Err(AppError { msg: e.to_string() });
+        return Err(anyhow!("error:{}", e));
     }
     Ok(())
 }
