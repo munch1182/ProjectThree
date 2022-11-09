@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import PartContentWrapperView from './PartContentWrapper.vue'
 import PartNavView from './PartNav.vue'
-import Home from './page/Home.vue'
+import { useNavStore } from '../stores/nav'
 
-const title = ref("首页")
+const nav = useNavStore()
+
 </script>
 <template>
     <div class="flex flex-row h-full">
-        <div class="flex w-48 h-screen bg-[var(--nav-color)]">
+        <div class="flex w-[var(--width-nav)] min-w-[var(--width-nav)] h-screen bg-[var(--color-nav-bg)]">
             <PartNavView />
         </div>
         <div class="line-w"></div>
-        <div class="flex flex-grow bg-[var(--content-color)]">
-            <PartContentWrapperView :title="title">
-                <Home />
+        <div class="flex flex-grow bg-[var(--color-content-bg)]">
+            <PartContentWrapperView :title="nav.title">
+                <RouterView />
             </PartContentWrapperView>
         </div>
     </div>

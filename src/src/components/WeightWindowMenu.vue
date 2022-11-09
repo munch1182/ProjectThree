@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { currWin, newWinow } from "../common/win";
+import { ref } from "vue";
+import { currWin, alawysTop } from "../common/win";
+
+const alawys = ref(false)
 
 function minimizeWindow() {
     const curr = currWin();
@@ -14,13 +17,14 @@ function closeWindow() {
 }
 
 function pinWindow() {
-    newWinow("/aaaa")
+    alawys.value = !alawys.value
+    alawysTop(alawys.value)
 }
 </script>
 
 <template>
-    <div class="flex h-[var(--window-menu-height)]">
-        <div @click="pinWindow" class="btn_win ">
+    <div class="flex h-[var(--height-window-menu)]">
+        <div @click="pinWindow" class="btn_win" :class="{alway:alawys}">
             <i class="iconfont icon-pin"></i>
         </div>
         <div @click="minimizeWindow" class="btn_win">
@@ -39,5 +43,9 @@ function pinWindow() {
 
 .btn_win:hover {
     @apply bg-gray-300
+}
+
+.alway {
+    @apply bg-[var(--color-nav-hover-bg)]
 }
 </style>

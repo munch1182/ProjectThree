@@ -36,4 +36,8 @@ function currWin(): WebviewWindow {
     return appWindow
 }
 
-export { currWin, getWinByRouter, newWinow }
+async function alawysTop(enable: boolean) {
+    await currWin().setAlwaysOnTop(enable)
+}
+
+export { currWin, getWinByRouter, newWinow, alawysTop }

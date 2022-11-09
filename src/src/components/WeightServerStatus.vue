@@ -20,6 +20,6 @@ get()
 
 <template>
     <div class="px-4 py-2">
-        <button @click="getOrOpen" class="text-xs text-gray-400">{{ addr.get }}</button>
+        <button @click="getOrOpen" class="text-xs text-gray-400">{{ addr.get.replace("localhost:", "") }}</button>
     </div>
 </template>

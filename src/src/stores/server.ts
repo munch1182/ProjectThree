@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-export const useServerStore = defineStore("server", () => {
-    const _SERVER_DEF = "NULL"
+const NAME = "server"
+const _SERVER_DEF = "NULL"
+
+export const useServerStore = defineStore(NAME, () => {
     const _server = ref(_SERVER_DEF)
 
     /**
@@ -13,7 +15,7 @@ export const useServerStore = defineStore("server", () => {
     /**
      * set
      */
-    const get = computed(() => _server.value.replace("localhost:", ""))
+    const get = computed(() => _server.value)
 
     /**
      *  set, 如果传入null或者不传参数, 将清除设置的值
