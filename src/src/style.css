@@ -21,3 +21,28 @@
     width: 1px;
     background-color: var(--color-gray);
 }
+
+/* 默认文字大小 */
+.text {
+    @apply text-sm
+}
+
+/* 默认间距 */
+.space {
+    @apply ml-4
+}
+
+/* 默认单行 */
+.item-line {
+    @apply flex items-center h-10
+}
+
+/* 默认单行文字输入 */
+.input-line{
+    @apply space text outline-none px-2 py-1 border-2 rounded-md bg-[var(--color-content-bg)] border-[var(--color-nav-bg)]
+}
+
+/* 默认btn */
+.btn{
+    @apply px-4 py-1 rounded-md bg-[var(--color-select-bg)] hover:bg-[#dad9d9] shadow-sm text
+}

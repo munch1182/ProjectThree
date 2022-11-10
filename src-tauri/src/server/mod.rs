@@ -1,3 +1,5 @@
+mod apicmd;
+mod apiset;
 mod api;
 mod basebean;
 

@@ -5,6 +5,7 @@
 
 mod app;
 mod log;
+mod proxy;
 mod server;
 
 use ::log::{error, info};

@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api'
 
 export const openWithSystemBrower = (addr: string) => get("/cmd/1/".concat(addr))
 export const getServerAddr = () => invoke<string>('server_addr')
+export const setProxyServer = (cmd: number) => get("/set/1/".concat(cmd))
 
 function get<T = any, R = AxiosResponse<T>>(url: string, params?: any): Promise<R> {
     var _url = getFullUrl(url)
