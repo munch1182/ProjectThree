@@ -20,7 +20,7 @@ fn cmd(t: u16, args: String) -> BaseBean<&'static str> {
         info!("cmd: '{} {}' : {}", program, arg, output.status);
 
         if let Some(1) = output.status.code() {
-            return BaseBean::success().data("success");
+            return *BaseBean::success().data("success");
         }
     };
     BaseBean::error1()

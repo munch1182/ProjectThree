@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 const NAME = "server"
-const _SERVER_DEF = "NULL"
+const _SERVER_DEF = "http://localhost:62242"
 
 export const useServerStore = defineStore(NAME, () => {
     const _server = ref(_SERVER_DEF)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import PartNormalInput from '../PartNormalInput.vue';
+import PartInputWrapper from '../PartInputWrapper.vue';
 </script>
 
 <template>
-    <PartNormalInput />
+    <PartInputWrapper />
 </template>

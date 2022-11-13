@@ -44,12 +44,18 @@ impl<'de> Deserialize<'de> for Code {
 }
 
 #[derive(Debug, Serialize, serde_D, Clone, Copy)]
-pub struct BaseBean<D: Copy> {
+pub struct BaseBean<D>
+where
+    D: Clone,
+{
     pub code: Code, // 序列化时是u8类型
     pub data: Option<D>,
 }
 
-impl<D: Copy> BaseBean<D> {
+impl<D> BaseBean<D>
+where
+    D: Clone,
+{
     pub fn success() -> Self {
         BaseBean {
             code: Code::Success,
@@ -68,9 +74,9 @@ impl<D: Copy> BaseBean<D> {
         Self::error(1)
     }
 
-    pub fn data(&mut self, data: D) -> Self {
+    pub fn data(&mut self, data: D) -> &mut Self {
         self.data = Some(data);
-        *self
+        self
     }
 }
 
@@ -82,7 +88,7 @@ mod tests {
     #[test]
     fn test_json() {
         let str = "{\"code\":0,\"data\":\"success\"}";
-        let bean = BaseBean::success().data("success");
+        let bean = *BaseBean::success().data("success");
         let parse_bean = serde_json::from_str::<BaseBean<&str>>(str).unwrap();
 
         assert_eq!(bean.code, parse_bean.code);

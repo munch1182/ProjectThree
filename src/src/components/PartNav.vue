@@ -70,11 +70,7 @@ function update(n: Nav) {
 
 <style scoped lang="postcss">
 a {
-    @apply flex justify-center items-center h-16 text-base;
-}
-
-.level1:hover {
-    @apply bg-[var(--color-nav-hover-bg)]
+    @apply flex justify-center items-center h-14 text-base;
 }
 
 li ul li a {

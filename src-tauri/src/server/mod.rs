@@ -1,6 +1,7 @@
-mod apicmd;
-mod apiset;
 mod api;
+mod apicmd;
+mod apidoc;
+mod apiset;
 mod basebean;
 
 use crate::app::App;
