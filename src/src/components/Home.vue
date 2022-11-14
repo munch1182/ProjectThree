@@ -2,7 +2,7 @@
 </script>
 
 <template>
-    hello world
+    home
 </template>
 
 <style scoped>

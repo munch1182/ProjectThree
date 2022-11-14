@@ -1,3 +1,5 @@
+[toc]
+
 # tauri
 
 官网: https://tauri.app/v1/guides/getting-started/setup
@@ -84,3 +86,44 @@
     ```
 4. 官网: https://tailwindcss.com/docs/guides/vite#vue
 5. 在`vue SFC`的`style`中使用时, 应设置`lang="postcss"`以使用`@apply`
+
+### 自定义窗口
+
+自定义窗口即不使用系统的窗口样式, 使用自定义的UI并实现窗口功能
+
+1. 创建窗口并实现功能, 这部分使用`css`+`js`完成
+    ```js
+    import { appWindow, WebviewWindow } from "@tauri-apps/api/window";
+    // appWindow即当前有焦点的窗口, 可使用其`minimize`、`close`及`setAlwaysOnTop`等方法控制窗口
+    // WebviewWindow即窗口对象, 新建WebviewWindow即新建窗口, 其path即可直接使用`router`路径
+
+    <div data-tauri-drag-region></div> // 为该div实现拖拽窗口、双击放大缩小窗口的功能
+    ```
+2. 取消窗口自定义
+    对于在`src-tauri/tauri.conf.json`中配置的窗口, 配置`decorations: false`即可取消默认窗口样式
+    对于通过`js`或者`rs`创建的窗口, 使用窗口对象`setDecorations(false)`即可
+3. 恢复窗口阴影
+    `winow`下取消窗口样式会同时取消窗口阴影, 要恢复阴影, 使用[`window-shadows`库](https://crates.io/crates/window-shadows), 并使用`tauri-plugin`为每一个创建的窗口都加上阴影
+    ```rust
+    use log::info;
+    use tauri::{plugin::Plugin, Runtime, Window};
+
+    pub struct TaruiWindowPlugin {}
+
+    impl<R: Runtime> Plugin<R> for TaruiWindowPlugin {
+        fn name(&self) -> &'static str {
+            "tauri-plugin-window"
+        }
+
+        fn created(&mut self, window: Window<R>) {
+            if let Err(_) = window_shadows::set_shadow(window, true) { // 为窗口加上阴影
+                info!("error to shadow window.")
+            }
+        }
+    }
+
+    // 使用
+    tauri::Builder::default()
+        .plugin(TaruiWindowPlugin::new())
+        .run(tauri::generate_context!())
+    ```

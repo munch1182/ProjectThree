@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root{
+    /* nav部分的背景 */
+    --color-nav-bg: #e9e7e6;
+    /* content部分的背景 */
+    --color-content-bg: #f5f5f5;
+    /* nav hover颜色 */
+    --color-nav-hover-bg: #dedcdb;
+    /* 标题栏的高度 */
+    --height-title-bar: 4rem;
+    /* 窗口工具部分高度 */
+    --height-window-menu: 2rem;
+
+    /* 默认间距 */
+    --space-padding: 1rem;
+
+    /* nav宽度 */
+    --width-nav: 8rem;
+}
+/**
+ * 横向间隔分割线
+ */
+.line-w {
+    @apply h-[1px] bg-[#e5e7eb]
+}
+
+/**
+ * 竖向间隔分割线
+ */
+.line-h {
+    @apply w-[1px] bg-[#e5e7eb]
+}
