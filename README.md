@@ -1,5 +1,7 @@
 # tauri
 
+官网: https://tauri.app/v1/guides/getting-started/setup
+
 ### 项目创建
 - 创建前端ui文件夹和后端rust文件夹平级的项目结构, 项目使用`vite`+`vue`+`typescript`
 
@@ -60,6 +62,25 @@
 
 ##### VueRouter
 
-1. 在`src`路径下安装: `npm install vue-router@latest`
-2. 创建`router`逻辑并在`src/src/main.ts`中使用
-3. 官网: https://router.vuejs.org/zh/introduction.html
+1. 在`src`路径下安装: `npm install vue-router@4`
+2. 使用`vue-router`的`createRouter`方法创建`router`并交由`app`使用
+3. 官网: https://router.vuejs.org/zh/guide/#router-view
+
+##### Tailwindcss
+
+1. 在`src`路径下安装: `npm install -D tailwindcss postcss autoprefixer`
+2. 在`src`路径下执行`npx tailwindcss init -p`, 并在生成的`tailwind.config.cjs`文件中修改`content`部分为
+    ```js
+    content: [
+        "./index.html",
+        "./src/**/*.{vue,js,ts,jsx,tsx}",
+    ],
+    ```
+3. 在基础`css`文件(如`src/src/style.css`)中引入
+    ```css
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+    ```
+4. 官网: https://tailwindcss.com/docs/guides/vite#vue
+5. 在`vue SFC`的`style`中使用时, 应设置`lang="postcss"`以使用`@apply`
