@@ -8,9 +8,6 @@ mod helper;
 mod plugin;
 mod server;
 
-use log::info;
-use tauri::Manager;
-
 use crate::plugin::pluginwin::TaruiWindowPlugin;
 use std::error::Error;
 
@@ -31,10 +28,7 @@ fn create_ui() {
 
 #[tauri::command]
 async fn server_or_empty() -> String {
-    app::App::get_server()
-        .unwrap_or(app::App::none())
-        .addr
-        .unwrap_or(String::from(""))
+    app::App::get_server_addr().unwrap_or(String::from(""))
 }
 
 fn setup(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
@@ -43,10 +37,12 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn open_dev(app: &mut tauri::App) {
-    if let Some(w) = app.get_window("main") {
-        w.open_devtools();
-    } else {
-        info!("error to open devtools");
-    }
+fn open_dev(_app: &mut tauri::App) {
+    // use log::info;
+    // use tauri::Manager;
+    // if let Some(w) = _app.get_window("main") {
+    //     w.open_devtools();
+    // } else {
+    //     info!("error to open devtools");
+    // }
 }

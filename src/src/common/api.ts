@@ -1,19 +1,28 @@
 import { invoke } from "@tauri-apps/api";
-import { u } from "@tauri-apps/api/globalShortcut-ff939597";
 import axios, { AxiosResponse } from "axios";
 
-export const testStartTime = async () => get<{ startTime: number; }>("/t/t").then(r => r.startTime)
+export const testStartTime = async () => get<{ startTime: number; }>("/t/t").then(r => r?.startTime).then(r => dataOrDefault(r, 0))
 
-class BaseResponse<D = any> {
-    code!: number;
-    data?: D
+// class BaseResponse<D = any> {
+//     code!: number;
+//     data?: D
+// }
 
-    isOk(): boolean {
-        return this.code == 0
-    }
+/**
+ * 如果data没有值, 则返回def
+ */
+async function dataOrDefault<D>(data: D | undefined, def: D): Promise<D> {
+    return Promise.resolve(data ? data : def)
 }
 
-async function get<D = any>(url: string, config?: any): Promise<D> {
+/**
+ * 如果data没有值, 则返回reject 
+ */
+async function dataOrReject<D>(data: D | undefined): Promise<D> {
+    return data ? Promise.resolve(data) : Promise.reject("no data")
+}
+
+async function get<D = any>(url: string, config?: any): Promise<D | undefined> {
     return getFullUrl(url) // 拼装url
         .then(u => axios.get(u, config)) // 执行请求
         .then(r => judgeStatusCode(r)) // 判断系统返回码
@@ -28,8 +37,6 @@ async function post(url: string, p?: any, config?: any): Promise<any> {
  * 从body中取出数据
  */
 function judgeStatusCode(r: AxiosResponse<any, any>): Promise<any> {
-    console.log(r);
-
     if (r.status != 200) {
         return Promise.reject("error: status ".concat(r.status.toString()))
     }
@@ -44,14 +51,13 @@ function judgeStatusCode(r: AxiosResponse<any, any>): Promise<any> {
 /**
  * 从BaseResponse中取出数据
  */
-function judgeBaseResponse<D>(bb: any): Promise<D> {
-    console.log("bb", bb);
-
-    if (bb instanceof BaseResponse<D>) { // 不是BaseBean强转返回
-        return Promise.resolve(bb as D)
+function judgeBaseResponse<D>(bb: any): Promise<D | undefined> {
+    // 只判断BaseBean的code然后返回data
+    if ("code" in bb) {
+        return bb.code == 0 ? Promise.resolve(bb.data) : Promise.reject("error: ".concat(bb.code.toString()))
     }
-    // 否则判断BaseBean的code然后返回data
-    return (bb.isOk() && bb.data) ? Promise.resolve(bb.data) : Promise.reject("error: ".concat(bb.code.toString()))
+    // 不是BaseBean强转返回
+    return Promise.resolve(bb as D)
 }
 
 /**

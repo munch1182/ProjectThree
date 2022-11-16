@@ -9,13 +9,6 @@ lazy_static! {
 pub(crate) struct App {}
 
 impl App {
-    pub(crate) fn none() -> ServerAddr {
-        ServerAddr {
-            addr: None,
-            start_time: 0,
-        }
-    }
-
     pub(crate) fn set_server(addr: String) {
         if let Ok(mut s_d) = SERVER_ADDR.lock() {
             s_d.addr = Some(addr);
@@ -31,6 +24,10 @@ impl App {
             });
         }
         None
+    }
+
+    pub(crate) fn get_server_addr() -> Option<String> {
+        return Self::get_server()?.addr;
     }
 }
 

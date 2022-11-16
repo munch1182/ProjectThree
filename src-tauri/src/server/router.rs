@@ -1,23 +1,39 @@
-use super::response::baseres::NetBB as BB;
-use crate::app::{App, ServerAddr};
-use axum::{extract::Path, routing::get, Json, Router};
+use axum::{
+    http::{header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue, Request},
+    middleware::{self, Next},
+    response::IntoResponse,
+    Router,
+};
+
+use log::info;
+
+use super::netlog;
+
+const ORGIN: &'static str = "http://localhost:5173";
 
 /**
  * 路由
  */
 pub(crate) fn create_router() -> Router {
     Router::new()
-        .route("/t/t/:any", get(test))
-        .route("/t/t", get(time))
+        .nest("/t", super::routertest::router2test()) // test
+        // 统一中间件
+        // 添加ACCESS_CONTROL_ALLOW_ORIGIN
+        .layer(middleware::from_fn(access_origin))
+        // 添加日志输出
+        .layer(middleware::from_fn(netlog::net_log))
 }
 
-async fn test(Path(str): Path<String>) -> String {
-    str
-}
+/**
+ * 添加ACCESS_CONTROL_ALLOW_ORIGIN
+ */
+async fn access_origin<B>(req: Request<B>, next: Next<B>) -> impl IntoResponse {
+    let mut res = next.run(req).await;
 
-async fn time() -> Json<BB<ServerAddr>> {
-    if let Some(server) = App::get_server() {
-        return BB::success(server).to();
+    if let Ok(value) = HeaderValue::from_str(ORGIN) {
+        res.headers_mut().insert(ACCESS_CONTROL_ALLOW_ORIGIN, value);
+        return res;
     }
-    BB::fail().to()
+    info!("error to add access origin");
+    res
 }

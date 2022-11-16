@@ -1,5 +1,7 @@
+mod netlog;
 mod response;
 mod router;
+mod routertest;
 
 use crate::app::App;
 use anyhow::{anyhow, Result};
@@ -12,7 +14,7 @@ pub(crate) fn create_server() {
 }
 
 fn create_tokio() -> Result<()> {
-    tokio::runtime::Builder::new_current_thread()
+    tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?
         .block_on(create_axum())
