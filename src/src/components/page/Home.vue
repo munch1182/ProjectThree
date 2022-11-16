@@ -2,7 +2,9 @@
 </script>
 
 <template>
-    home
+    <div class="p-[var(--space-padding)]">
+        home
+    </div>
 </template>
 
 <style scoped>

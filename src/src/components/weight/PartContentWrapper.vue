@@ -15,6 +15,7 @@ onBeforeRouteUpdate(async (to, _) => {
 
 <template>
     <div class="flex flex-col flex-grow">
+        <!-- content的标题部分 -->
         <div class="flex h-[var(--height-title-bar)]" data-tauri-drag-region>
             <span class="h-max mx-[var(--space-padding)] my-auto font-bold text-[1.5rem]">{{ title }}</span>
             <div class="flex flex-grow" data-tauri-drag-region></div>
@@ -24,7 +25,3 @@ onBeforeRouteUpdate(async (to, _) => {
         <slot></slot>
     </div>
 </template>
-
-<style scoped>
-
-</style>

@@ -4,21 +4,37 @@ import { minimizeWindow, closeWindow, alawysTop } from "../../common/win";
 
 const alawys = ref(false)
 
-function pinWindow() {
-    alawys.value = !alawys.value
-    alawysTop(alawys.value)
+function pinOr() {
+    pin(!alawys.value)
 }
+
+function pin(b: boolean) {
+    alawys.value = b
+    alawysTop(b)
+}
+
+function minimize() {
+    pin(false)
+    minimizeWindow()
+}
+
+function close() {
+    pin(false)
+    closeWindow()
+}
+
 </script>
 
 <template>
+    <!-- 窗口控制功能 -->
     <div class="h-[var(--height-window-menu)] flex flex-row">
-        <div @click="pinWindow" class="window-icon" :class="{alawys:alawys}">
+        <div @click="pinOr" class="window-icon" :class="{alawys:alawys}">
             <i class="iconfont icon-pin"></i>
         </div>
-        <div @click="minimizeWindow" class="window-icon">
+        <div @click="minimize" class="window-icon">
             <i class="iconfont icon-minimizing"></i>
         </div>
-        <div @click="closeWindow" class="window-icon">
+        <div @click="close" class="window-icon">
             <i class="iconfont icon-close"></i>
         </div>
     </div>

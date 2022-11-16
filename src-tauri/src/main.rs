@@ -3,13 +3,50 @@
     windows_subsystem = "windows"
 )]
 
+mod app;
+mod helper;
 mod plugin;
+mod server;
+
+use log::info;
+use tauri::Manager;
+
 use crate::plugin::pluginwin::TaruiWindowPlugin;
+use std::error::Error;
 
 fn main() {
+    helper::init(); // 统一初始化
+    std::thread::spawn(|| server::create_server()); // 新线程创建服务器
+    create_ui(); // 创建ui
+}
+
+fn create_ui() {
     tauri::Builder::default()
-        //.invoke_handler(tauri::generate_handler![greet])
+        .setup(|app| setup(app))
+        .invoke_handler(tauri::generate_handler![server_or_empty])
         .plugin(TaruiWindowPlugin::new())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[tauri::command]
+async fn server_or_empty() -> String {
+    app::App::get_server()
+        .unwrap_or(app::App::none())
+        .addr
+        .unwrap_or(String::from(""))
+}
+
+fn setup(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
+    #[cfg(debug_assertions)]
+    open_dev(app);
+    Ok(())
+}
+
+fn open_dev(app: &mut tauri::App) {
+    if let Some(w) = app.get_window("main") {
+        w.open_devtools();
+    } else {
+        info!("error to open devtools");
+    }
 }
