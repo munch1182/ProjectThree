@@ -1,6 +1,7 @@
 mod netlog;
 mod response;
 mod router;
+mod routerfile;
 mod routertest;
 
 use crate::app::App;

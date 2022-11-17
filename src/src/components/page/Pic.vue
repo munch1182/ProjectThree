@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { open } from "@tauri-apps/api/dialog";
+import { imgInput } from "../../common/api";
 
 class ImgInfo {
     name!: string; // 文件名
@@ -24,32 +24,40 @@ function infoFromFile(f: File): ImgInfo {
 }
 
 const info = ref<ImgInfo>()
+const input = ref()
 const preview = ref()
 
 function drop(e: DragEvent) {
     const files = e.dataTransfer?.files
-    if (files && files.length) {
-        fileHandle(files[0])
-        e.dataTransfer.clearData()
+    fileHandle(files)
+    e.dataTransfer?.clearData()
+}
+
+// 点击
+function openChose() {
+    input.value.click()
+}
+
+function onChange() {
+    if ("files" in input.value) {
+        fileHandle(input.value.files)
     }
 }
 
-async function openChose() {
-    const f = await open({
-        filters: [{ name: '.', extensions: ['png'] }]
-    })
-    if (!f) return
-    const path = Array.isArray(f) ? f[0] : f
+async function fileHandle(fs: FileList | undefined) {
+    if (!fs || !fs.length) {
+        return
+    }
 
-    console.log(path) // todo path转为file
-}
-
-async function fileHandle(f: File) {
+    const f = fs[0]
     info.value = infoFromFile(f)
+
+    imgInput(f).then(r => { }).catch(e => console.log(e))
 
     const fr = new FileReader()
     fr.onload = () => preview.value.src = fr.result
     fr.readAsDataURL(f) // 将其转为base64
+
 }
 
 function openImg() {
@@ -63,6 +71,7 @@ function openImg() {
             <div @dragenter.stop.prevent="" @dragover.stop.prevent="" @dragleave.stop.prevent=""
                 @drop.stop.prevent="drop" @click="openChose"
                 class="w-[128px] h-full flex items-center justify-center border-div">
+                <input ref="input" type="file" style="display: none;" @change="onChange">
                 <i class="iconfont icon-add" style="font-size: 32px;color: #909399;"></i>
             </div>
             <div v-show="info != undefined" class="flex flex-col max-w-[128px] h-full mx-[var(--space-padding)]">

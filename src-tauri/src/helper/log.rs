@@ -7,7 +7,7 @@ pub(crate) fn init_log() {
         .roll_count(10)
         .time_format("%Y-%m-%d %H:%M:%S") //E.g:%H:%M:%S.%f
         .level("debug")
-        .output_file()
+        // .output_file()
         .output_console()
         .build();
 

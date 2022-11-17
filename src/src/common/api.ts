@@ -3,10 +3,16 @@ import axios, { AxiosResponse } from "axios";
 
 export const testStartTime = async () => get<{ startTime: number; }>("/t/t").then(r => r?.startTime).then(r => dataOrDefault(r, 0))
 
-// class BaseResponse<D = any> {
-//     code!: number;
-//     data?: D
-// }
+export const imgInput = async (f: File) => {
+    const p = new FormData();
+    p.append("f-i", f)
+    post<BaseResponse>("/f/u", p, { 'Content-type': 'multipart/form-data', 'Content-Disposition': 'target.png' })
+}
+
+class BaseResponse<D = any> {
+    code!: number;
+    data?: D
+}
 
 /**
  * 如果data没有值, 则返回def
@@ -29,8 +35,11 @@ async function get<D = any>(url: string, config?: any): Promise<D | undefined> {
         .then(b => judgeBaseResponse<D>(b)) // 从BaseResponse中取出数据
 }
 
-async function post(url: string, p?: any, config?: any): Promise<any> {
-    return getFullUrl(url).then(u => axios.post(u, p, config)).then(r => judgeStatusCode(r));
+async function post<D = any>(url: string, p?: any, config?: any): Promise<D | undefined> {
+    return getFullUrl(url) // 拼装url
+        .then(u => axios.post(u, p, config)) // 执行请求
+        .then(r => judgeStatusCode(r)) // 判断系统返回码
+        .then(b => judgeBaseResponse<D>(b)) // 从BaseResponse中取出数据
 }
 
 /**

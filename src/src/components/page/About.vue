@@ -8,7 +8,9 @@ testStartTime().then(r => show.value = r.toString())
 </script>
 
 <template>
-    {{ show }}
+    <div class="p-[var(--space-padding)]">
+        {{ show }}
+    </div>
 </template>
 
 <style scoped>
