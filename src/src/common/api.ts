@@ -7,7 +7,7 @@ export const testStartTime = async () => get<{ startTime: number; }>("/t/t").the
 export const imgInput = async (f: File) => {
     const p = new FormData();
     p.append("f_i", f)
-    return post<string[]>("/f/u", p, { 'Content-type': 'multipart/form-data' }).then(l => dataOrReject(l)).then(l => getFullUrl(l[0]))
+    return post<string[]>("/f/i", p, { 'Content-type': 'multipart/form-data' }).then(l => dataOrReject(l)).then(l => getFullUrl(l[0]))
 }
 
 // class BaseResponse<D = any> {

@@ -39,6 +39,8 @@ lazy_static = "1.4"
 
 chrono = "0.4"
 
+image = "0.24"
+
 [features]
 # by default Tauri runs in production mode
 # when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL

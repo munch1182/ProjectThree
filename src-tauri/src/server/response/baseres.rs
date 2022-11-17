@@ -8,8 +8,8 @@ pub enum NetCode {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct NetBB<T> {
-    code: NetCode,
-    data: Option<T>,
+    pub code: NetCode,
+    pub data: Option<T>,
 }
 
 impl<T> NetBB<T> {
@@ -21,6 +21,10 @@ impl<T> NetBB<T> {
             code: NetCode::Success,
             data: Some(data),
         }
+    }
+
+    pub fn issuccess(&self) -> bool {
+        self.code == NetCode::Success
     }
 
     /**

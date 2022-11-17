@@ -1,3 +1,4 @@
+use image::GenericImageView;
 use std::path::PathBuf;
 use tauri::api::path::data_dir;
 
@@ -10,17 +11,20 @@ use log::{error, info};
  * 路由, /i+..
  */
 pub(crate) fn router2file() -> Router {
-    Router::new().route("/u", post(receive_upload)) // upload
+    Router::new()
+        .route("/u", post(receive_upload)) // upload
+        .route("/i", post(img_receive_upload)) // 图片处理是单独的路由
 }
 
 /**
  * 静态资源路由, 直接通过路由访问
  */
 pub(crate) fn router2assets() -> SpaRouter {
-    SpaRouter::new("/a", ServerFile::assets_dir()) // /a/*.*
+    SpaRouter::new(SUFFIX_ROUTER, ServerFile::assets_dir()) // /a/*.*
 }
 
 const SUFFIX_FILE: &'static str = "f_";
+const SUFFIX_ROUTER: &'static str = "/a";
 
 // todo 支持分段同时发送和接收
 async fn receive_upload(mut part: Multipart) -> Json<BB<Vec<String>>> {
@@ -49,7 +53,7 @@ async fn receive_upload(mut part: Multipart) -> Json<BB<Vec<String>>> {
             let result = ServerFile::get().cache(&save_path_name, data).await;
             if let Some(name) = result {
                 info!("{}", name.display());
-                vec.push(format!("/a/{}", save_path_name)); // todo 建表: 返回文件名与实际地址的引用
+                vec.push(format!("{}/{}", SUFFIX_ROUTER, save_path_name)); // todo 建表: 返回文件名与实际地址的引用
             } else {
                 vec.push(String::new())
             }
@@ -62,6 +66,45 @@ async fn receive_upload(mut part: Multipart) -> Json<BB<Vec<String>>> {
     BB::success(vec).to()
 }
 
+async fn img_receive_upload(part: Multipart) -> Json<BB<Vec<String>>> {
+    let result = receive_upload(part).await.0;
+    if result.issuccess() {
+        let mut newarr = vec![];
+        if let Some(d) = result.data {
+            let path = ServerFile::assets_dir();
+            for ele in d {
+                let mut pb: PathBuf = path.clone();
+                if let Some(n) = PathBuf::from(&ele).file_name() {
+                    // 放入文件, 不能是文件夹
+                    pb.push(n);
+                } else {
+                    newarr.push(ele);
+                    continue;
+                }
+                match pb.extension() {
+                    Some(a) => match a.to_str().unwrap_or("") {
+                        "png" | "jepg" => {
+                            if let Ok(img) = image::open(&pb) {
+                                println!("dim:{:?}", img.dimensions());
+                                println!("bond:{:?}", img.bounds());
+                                println!("c:{:?}", img.color());
+                            } else {
+                                error!("error to open img: {:?}", pb.display());
+                            }
+                        }
+                        _ => {}
+                    },
+                    _ => {}
+                }
+
+                newarr.push(ele);
+            }
+        }
+        return BB::success(newarr).to();
+    } else {
+        return result.to();
+    }
+}
 struct ServerFile {
     _dirdir: PathBuf,   // 数据文件夹
     _cachedir: PathBuf, // 缓存文件夹部分
