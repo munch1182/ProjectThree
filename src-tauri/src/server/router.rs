@@ -17,7 +17,8 @@ const ORGIN: &'static str = "http://localhost:5173";
 pub(crate) fn create_router() -> Router {
     Router::new()
         .nest("/t", super::routertest::router2test()) // test
-        .nest("/f", super::routerfile::router2file())
+        .nest("/f", super::routerfile::router2file()) // 文件/图片
+        .merge(super::routerfile::router2assets()) // 静态资源
         // 统一中间件
         // 添加ACCESS_CONTROL_ALLOW_ORIGIN
         .layer(middleware::from_fn(access_origin))

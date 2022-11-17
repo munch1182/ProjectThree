@@ -1,18 +1,19 @@
 import { invoke } from "@tauri-apps/api";
 import axios, { AxiosResponse } from "axios";
 
+
 export const testStartTime = async () => get<{ startTime: number; }>("/t/t").then(r => r?.startTime).then(r => dataOrDefault(r, 0))
 
 export const imgInput = async (f: File) => {
     const p = new FormData();
-    p.append("f-i", f)
-    post<BaseResponse>("/f/u", p, { 'Content-type': 'multipart/form-data', 'Content-Disposition': 'target.png' })
+    p.append("f_i", f)
+    return post<string[]>("/f/u", p, { 'Content-type': 'multipart/form-data' }).then(l => dataOrReject(l)).then(l => getFullUrl(l[0]))
 }
 
-class BaseResponse<D = any> {
-    code!: number;
-    data?: D
-}
+// class BaseResponse<D = any> {
+//     code!: number;
+//     data?: D
+// }
 
 /**
  * 如果data没有值, 则返回def
@@ -69,11 +70,16 @@ function judgeBaseResponse<D>(bb: any): Promise<D | undefined> {
     return Promise.resolve(bb as D)
 }
 
+let startUrl: string | undefined = undefined
+
 /**
  * @param url 基础url之后的部分, 需要以/开头 
  */
 async function getFullUrl(url: string): Promise<string> {
-    const startUrl = await invoke<string>("server_or_empty")
+    if (startUrl) {
+        return Promise.resolve(startUrl.concat(url))
+    }
+    startUrl = await invoke<string>("server_or_empty")
     if (!startUrl) {
         return Promise.reject("no server")
     } else {

@@ -52,11 +52,14 @@ async function fileHandle(fs: FileList | undefined) {
     const f = fs[0]
     info.value = infoFromFile(f)
 
-    imgInput(f).then(r => { }).catch(e => console.log(e))
+    imgInput(f).then(url => {
+        console.log(url)
+        preview.value.src = url
+    }).catch(e => console.log(e))
 
-    const fr = new FileReader()
-    fr.onload = () => preview.value.src = fr.result
-    fr.readAsDataURL(f) // 将其转为base64
+    // const fr = new FileReader()
+    // fr.onload = () => preview.value.src = fr.result
+    // fr.readAsDataURL(f) // 将其转为base64
 
 }
 
