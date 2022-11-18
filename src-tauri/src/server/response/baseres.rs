@@ -13,6 +13,13 @@ pub struct NetBB<T> {
 }
 
 impl<T> NetBB<T> {
+    pub fn none_from<O>(pb: &NetBB<O>) -> Self {
+        Self {
+            code: pb.code,
+            data: None,
+        }
+    }
+
     /**
      * 返回携带数据的成功
      */
@@ -54,9 +61,9 @@ impl<T> NetBB<T> {
         Self::other(1)
     }
 
-    pub fn file_req_err() -> Self {
-        Self::other(21)
-    }
+    // pub fn file_req_err() -> Self {
+    //     Self::other(21)
+    // }
 
     pub fn to(self) -> axum::Json<Self> {
         axum::Json(self)

@@ -1,3 +1,4 @@
+pub mod filehelper;
 mod log;
 
 pub(crate) fn init() {

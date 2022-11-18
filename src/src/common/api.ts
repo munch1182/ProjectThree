@@ -4,10 +4,17 @@ import axios, { AxiosResponse } from "axios";
 
 export const testStartTime = async () => get<{ startTime: number; }>("/t/t").then(r => r?.startTime).then(r => dataOrDefault(r, 0))
 
+export type ImageInfo = { name: string, url: string, len: number, dimen: { w: number, h: number } }
 export const imgInput = async (f: File) => {
     const p = new FormData();
-    p.append("f_i", f)
-    return post<string[]>("/f/i", p, { 'Content-type': 'multipart/form-data' }).then(l => dataOrReject(l)).then(l => getFullUrl(l[0]))
+    p.append("f_i_1", f, f.name) // f_i_1
+    return post<ImageInfo[]>("/f/i", p)
+        .then(l => dataOrReject(l))
+        .then(l => l[0])
+        .then(i => {
+            i.url = startUrl!!.concat(i.url)
+            return i
+        })
 }
 
 // class BaseResponse<D = any> {

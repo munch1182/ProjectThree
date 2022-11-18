@@ -1,11 +1,14 @@
-use image::GenericImageView;
-use std::path::PathBuf;
-use tauri::api::path::data_dir;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 
 use super::response::baseres::NetBB as BB;
-use axum::{extract::Multipart, routing::post, Json, Router};
+use super::response::imageres::ImageInfo;
+use crate::app::App;
+use axum::body::Bytes;
+use axum::Json;
+use axum::{extract::Multipart, routing::post, Router};
 use axum_extra::routing::SpaRouter;
-use log::{error, info};
+use log::{debug, error};
 
 /**
  * 路由, /i+..
@@ -20,165 +23,170 @@ pub(crate) fn router2file() -> Router {
  * 静态资源路由, 直接通过路由访问
  */
 pub(crate) fn router2assets() -> SpaRouter {
-    SpaRouter::new(SUFFIX_ROUTER, ServerFile::assets_dir()) // /a/*.*
+    SpaRouter::new(SUFFIX_ROUTER, App::cachedir()) // /a/*.*
+}
+
+async fn receive_upload(mut part: Multipart) -> Json<BB<Vec<String>>> {
+    let mut vec = vec![];
+    while let Ok(Some(field)) = part.next_field().await {
+        if let Some(tname) = field.name() {
+            // 对应Content-Type后的文件名字
+            if !tname.starts_with(SUFFIX_FILE) {
+                break; // name没有前缀则不保存, 直接结束
+            }
+            if let Some(fname) = field.file_name() {
+                if fname.is_empty() {
+                    break; // 无文件名则不保存, 直接结束
+                }
+                let reqname = format!("{}_{}", tname, fname);
+                let path = Path::new(reqname.as_str());
+                if let Ok(b) = field.bytes().await {
+                    // todo 判断保存的文件夹和路径(根据tname)
+                    if let Ok(name) = FileSaver::cache(path, b).await {
+                        vec.push(name);
+                    }
+                }
+            }
+        }
+    }
+    BB::success(vec).to()
+}
+
+async fn img_receive_upload(part: Multipart) -> Json<BB<Vec<Option<ImageInfo>>>> {
+    let result = receive_upload(part).await.0; // 先将图片保存
+    if result.issuccess() {
+        if let Some(ref vec) = result.data {
+            let dir = &App::cachedir();
+            let mut resultvec = vec![];
+            for ele in vec {
+                let path = FileSaver::url2path(dir, &ele);
+
+                if let Ok(info) = crate::helper::filehelper::image_read(&path) {
+                    resultvec.push(Some(info));
+                } else {
+                    resultvec.push(None);
+                }
+            }
+            return BB::success(resultvec).to();
+        }
+    }
+    return BB::none_from(&result).to();
 }
 
 const SUFFIX_FILE: &'static str = "f_";
 const SUFFIX_ROUTER: &'static str = "/a";
 
-// todo 支持分段同时发送和接收
-async fn receive_upload(mut part: Multipart) -> Json<BB<Vec<String>>> {
-    let mut vec = vec![];
-    while let Some(f) = part.next_field().await.unwrap_or(None) {
-        let content_type = f.content_type().unwrap_or("");
+pub struct FileSaver {}
 
-        if content_type.is_empty() {
-            // 必须要有类型否则直接失败
-            return BB::file_req_err().to();
-        }
-        let want_name = f.name().unwrap_or(""); // 必须要有format-data前的名字
-        if !want_name.starts_with(SUFFIX_FILE) {
-            // 且必须以f-开头否则直接失败
-            return BB::file_req_err().to();
-        }
-        let save_path_name = format!(
-            "{}_{}",
-            want_name.replace(SUFFIX_FILE, ""),
-            content_type.replace("/", ".")
-        );
+impl FileSaver {
+    /**
+     * 将返回的静态文件路径转为在dir路径下的真实文件路径
+     */
+    pub fn url2path(dir: &PathBuf, url: &String) -> PathBuf {
+        let urlpath = PathBuf::from(url); // 以SUFFIX_ROUTER开头的地址
 
-        println!("save_path_name: {}", save_path_name);
-
-        if let Ok(data) = f.bytes().await {
-            let result = ServerFile::get().cache(&save_path_name, data).await;
-            if let Some(name) = result {
-                info!("{}", name.display());
-                vec.push(format!("{}/{}", SUFFIX_ROUTER, save_path_name)); // todo 建表: 返回文件名与实际地址的引用
-            } else {
-                vec.push(String::new())
-            }
-        } else {
-            error!("error to read file data");
-            return BB::file_req_err().to();
-        }
-    }
-
-    BB::success(vec).to()
-}
-
-async fn img_receive_upload(part: Multipart) -> Json<BB<Vec<String>>> {
-    let result = receive_upload(part).await.0;
-    if result.issuccess() {
-        let mut newarr = vec![];
-        if let Some(d) = result.data {
-            let path = ServerFile::assets_dir();
-            for ele in d {
-                let mut pb: PathBuf = path.clone();
-                if let Some(n) = PathBuf::from(&ele).file_name() {
-                    // 放入文件, 不能是文件夹
-                    pb.push(n);
-                } else {
-                    newarr.push(ele);
-                    continue;
-                }
-                match pb.extension() {
-                    Some(a) => match a.to_str().unwrap_or("") {
-                        "png" | "jepg" => {
-                            if let Ok(img) = image::open(&pb) {
-                                println!("dim:{:?}", img.dimensions());
-                                println!("bond:{:?}", img.bounds());
-                                println!("c:{:?}", img.color());
-                            } else {
-                                error!("error to open img: {:?}", pb.display());
-                            }
-                        }
-                        _ => {}
-                    },
-                    _ => {}
-                }
-
-                newarr.push(ele);
-            }
-        }
-        return BB::success(newarr).to();
-    } else {
-        return result.to();
-    }
-}
-struct ServerFile {
-    _dirdir: PathBuf,   // 数据文件夹
-    _cachedir: PathBuf, // 缓存文件夹部分
-}
-
-impl ServerFile {
-    fn get() -> Self {
-        let dir = data_dir().unwrap_or(PathBuf::from("../"));
-        let mut _dirdir = PathBuf::new(); // {data}/.p3  => {user}/AppData/Roaming/.p3
-        _dirdir.clone_from(&dir);
-        _dirdir.push(".p3");
-        let mut _cachedir = PathBuf::new(); // {data}/.p3/cache
-        _cachedir.clone_from(&_dirdir);
-        _cachedir.push("cache");
-        Self { _dirdir, _cachedir }
-    }
-
-    fn assets_dir() -> PathBuf {
-        let dir = data_dir().unwrap_or(PathBuf::from("../"));
-        let mut _cachedir = PathBuf::new(); // {data}/.p3/cache
-        _cachedir.clone_from(&dir);
-        _cachedir.push(".p3");
-        _cachedir.push("cache");
-        _cachedir
+        // 将SUFFIX_ROUTER去掉
+        let filepath = urlpath
+            .iter()
+            .map(|x| x.to_os_string())
+            .collect::<Vec<OsString>>()[2..] // 因为是/a => / + a, 所以是从2开始
+            .iter()
+            .collect::<PathBuf>();
+        return dir.join(filepath);
     }
 
     /**
-     * 将数据写入缓存文件夹下的[filename]路径中, 返回最后的文件名
+     * 将路径转为对外可访问的url
      */
-    async fn cache(&self, filename: &String, data: impl AsRef<[u8]>) -> Option<PathBuf> {
-        Self::_write(&self._cachedir, filename, data).await
+    pub fn path2url<P: AsRef<Path>>(p: P) -> String {
+        let mut path = p.as_ref().to_path_buf();
+
+        let cache = App::cachedir();
+        let ds = cache.as_os_str();
+        let mut vec = vec![];
+        loop {
+            let pathstr = path.as_os_str();
+
+            if pathstr == ds {
+                vec.reverse(); // 需要倒转
+                let finalpath: PathBuf = vec.iter().collect();
+                return format!("{}/{}", SUFFIX_ROUTER, finalpath.to_str().unwrap_or(""))
+                    .replace("\\", "/");
+            }
+            if let Some(filename) = path.file_name() {
+                vec.push(filename.to_os_string());
+            }
+            if !path.pop() {
+                break;
+            };
+        }
+
+        String::new()
     }
 
     /**
-     * 将数据写入数据文件夹下的[filename]路径中, 返回最后的文件名
+     * 将文件写入缓存文件
+     *
+     * path: 文件名, 可带文件夹, 但不能以/开头
+     * 返回最终的文件服务器地址(不带baseurl), 如果写入失败, 则返回空字符
      */
-    // async fn data(&self, filename: &String, data: impl AsRef<[u8]>) -> Option<PathBuf> {
-    //     Self::_write(&self._datadir, filename, data).await
-    // }
+    async fn cache<P>(path: P, data: Bytes) -> anyhow::Result<String>
+    where
+        P: AsRef<Path> + std::fmt::Debug,
+    {
+        let path = path.as_ref();
+        let fullpath = App::cachedir().join(path);
 
-    async fn _write(dir: &PathBuf, filename: &String, data: impl AsRef<[u8]>) -> Option<PathBuf> {
-        if !Self::_mk_assets_dir(dir) {
-            return None;
-        }
-        let mut filepath = PathBuf::new();
-        filepath.push(dir.as_os_str());
-        filepath.push(filename);
+        debug!("start write {:?} data to {:?}", path, fullpath.display());
 
-        // 如果有同名文件, 则删除原文件
-        if filepath.exists() {
-            if let Err(e) = std::fs::remove_file(&filepath) {
-                error!("error to del {}: {}", &filepath.display(), e);
-                return None;
-            }
-        }
+        use crate::helper::filehelper::{sure_file_new, sure_path};
+        sure_path(&fullpath); // 确保文件夹已创建
+        sure_file_new(&fullpath); // 确保文件是最新的
 
-        if let Ok(_) = tokio::fs::write(&filepath, data).await {
-            return Some(filepath);
-        } else {
-            error!("error to write data to file: {}", filepath.display());
+        if Self::_write(&fullpath, data).await.is_ok() {
+            return Ok(Self::path2url(&fullpath)); // 返回网络地址
         }
-        return None;
+        error!("error to write {} data", fullpath.display());
+
+        Ok(String::new())
     }
 
-    fn _mk_assets_dir(dir: &PathBuf) -> bool {
-        use std::fs;
-        if let Err(_) = fs::read_dir(dir) {
-            if let Err(e) = fs::DirBuilder::new().recursive(true).create(dir) {
-                error!("error to create dir: {}", e);
-                return false;
-            } else {
-                info!("success to create dir: {}", dir.display());
-            }
-        }
-        return true;
+    async fn _write(path: &PathBuf, data: Bytes) -> Result<(), std::io::Error> {
+        tokio::fs::write(&path, data).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FileSaver;
+    use super::SUFFIX_ROUTER;
+    use crate::app::App;
+
+    #[test]
+    fn test_u2p() {
+        let url = format!("{}{}", SUFFIX_ROUTER, "/middledir/b.txt");
+        let a = FileSaver::url2path(&App::cachedir(), &url);
+        println!("{} => {}", url, a.display());
+
+        let url = format!("{}{}", SUFFIX_ROUTER, "/file.txt");
+        let a = FileSaver::url2path(&App::cachedir(), &url);
+        println!("{} => {}", url, a.display());
+    }
+
+    #[test]
+    fn test_p2u() {
+        let mut path = App::cachedir();
+        path.push("test/a.txt");
+
+        let url = FileSaver::path2url(&path);
+
+        println!("{} => {}", path.display(), url);
+
+        let mut path = App::datadir();
+        path.push("a.txt");
+
+        let url = FileSaver::path2url(&path);
+
+        println!("{} => {}", path.display(), url);
     }
 }
