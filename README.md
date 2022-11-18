@@ -157,3 +157,34 @@
     ```
 
 ### 文件拖拽
+
+
+### 全局属性
+
+Vue3组合式函数注册和调用全局属性, 在`vue`包的`ComponentCustomProperties`下有文档实例
+1. 在`tsconfig.json`包含的文件范围内新建一个自命名的`*.d.ts`, 并声明类型
+    ```ts
+    export { } // 必须加上
+
+    declare module '@vue/runtime-core' { // 这段代码也可以直接写在main.ts中 
+        interface ComponentCustomProperties {
+            $myprop: AnyType //为自己即将注册的全局属性定义类型, 该类型需要引入  // 实际是为@vue/runtime-core包定义该属性的类型
+        }
+    }
+    ```
+2. 在`main.ts`注册全局属性
+    ```ts
+    const app = createApp(App)
+
+    app.config.globalProperties.$myprop = any // 直接赋值即可
+
+    const vm = app.mount('#app')
+
+    vm.$api // 此时即有类型提示
+    ```
+3. 在组件中调用, 如果使用函数式, 即可直接使用`this.$myprop`, 如果使用组合式, 则需要引入方法
+    ```ts
+    import { getCurrentInstance } from "vue";
+    const { proxy } = getCurrentInstance()!!
+    proxy?.$myprop  // 即是注册的属性, 有类型提示
+    ```

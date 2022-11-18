@@ -39,6 +39,7 @@ impl App {
         return PathBuf::new();
     }
 
+    #[allow(dead_code)]
     pub fn datadir() -> PathBuf {
         if let Ok(a) = ASSETS.lock() {
             return a.data();

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from '@vue/reactivity';
 import { ref } from 'vue'
-import { imgInput, ImageInfo } from "../../common/api";
+import { imgInput, ImageInfo } from "../../common/api/apifile";
 import { size2str } from "../../common/helper";
 
 const infoRef = ref<ImageInfo>()
@@ -59,36 +59,49 @@ const lenStr = computed(() => {
 function openImg() {
     // todo open by system
 }
+
+function convertIcon() {
+
+}
 </script>
 
 <template>
+    <!-- 图片 -->
     <div class="p-[var(--space-padding)]" id="pic">
-        <div class="flex h-[var(--size)]">
+        <div class="flex h-[10rem]">
+            <!-- 文件上传区域 -->
             <div @dragenter.stop.prevent="" @dragover.stop.prevent="" @dragleave.stop.prevent=""
                 @drop.stop.prevent="drop" @click="openChose"
-                class="w-[var(--size)] h-full flex items-center justify-center border-div">
+                class="w-[var(--size)] h-[var(--size)] flex items-center justify-center border-div">
                 <input ref="input" type="file" style="display: none;" @change="onChange">
                 <i class="iconfont icon-add" style="font-size: 32px;color: #909399;"></i>
             </div>
-            <div v-show="infoRef != undefined"
-                class="flex flex-col max-w-[var(--size)] h-full mx-[var(--space-padding)]">
-                <span class="text-[0.6rem] mt-2 inline-block break-words">{{ infoRef?.name }}</span>
-                <span class="text-[0.5rem] mt-1 text-gray-600">{{ lenStr }}</span>
-            </div>
-            <div v-show="infoRef != undefined" class="w-max h-max flex-col">
+
+            <!-- 预览界面 -->
+            <div v-show="infoRef != undefined" class="w-max h-max flex flex-col ml-[var(--space-padding)]">
                 <div
                     class="w-max h-max max-w-[var(--size)] max-h-[var(--size)] p-[var(--space-padding)]  flex items-center justify-center border-div">
                     <img ref="preview" @click="openImg">
                 </div>
                 <span class="text-[0.6rem] mt-2 block text-center text-gray-600">{{ dimen }}</span>
             </div>
+
+            <!-- 图片信息 -->
+            <div v-show="infoRef != undefined"
+                class="flex flex-col max-w-[var(--size)] h-max mx-[var(--space-padding)]">
+                <span class="text-[0.6rem] mt-2 inline-block break-words">{{ infoRef?.name }}</span>
+                <span class="text-[0.5rem] mt-1 text-gray-600">{{ lenStr }}</span>
+            </div>
+        </div>
+        <div class="flex flex-col" @click="convertIcon">
+            <input type="button" class="btn" value="生成icon">
         </div>
     </div>
 </template>
 
 <style scoped lang="postcss">
 #pic {
-    --size: 128px
+    --size: 8rem
 }
 
 .border-div {

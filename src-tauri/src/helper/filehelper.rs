@@ -16,11 +16,13 @@ use std::{
 pub fn sure_path<P: AsRef<Path>>(p: P) -> bool {
     let mut tmp = p.as_ref().to_path_buf();
     if tmp.is_file() {
+        // 如果是文件: 只有在已存在时才会返回true
         tmp.pop();
     } else if let Some(_) = tmp.extension() {
+        // 如果有后缀名
         tmp.pop();
     }
-    if tmp.is_dir() && !tmp.exists() {
+    if !tmp.exists() {
         return DirBuilder::new().recursive(true).create(tmp).is_ok();
     }
     return true;
