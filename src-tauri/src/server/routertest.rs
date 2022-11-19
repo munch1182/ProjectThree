@@ -1,4 +1,4 @@
-use super::response::baseres::NetBB as BB;
+use super::bean::baseres::NetBB as BB;
 use crate::app::{App, ServerAddr};
 use axum::{extract::Path, routing::get, Json, Router};
 

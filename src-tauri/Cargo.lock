@@ -2249,6 +2249,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tokio",
+ "tower-http",
  "window-shadows",
 ]
 

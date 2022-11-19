@@ -1,8 +1,8 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-use super::response::baseres::NetBB as BB;
-use super::response::imageres::ImageInfo;
+use super::bean::baseres::NetBB as BB;
+use super::bean::image::{ImageInfo, ImageOperateReq};
 use crate::app::App;
 use axum::body::Bytes;
 use axum::Json;
@@ -16,7 +16,8 @@ use log::{debug, error};
 pub(crate) fn router2file() -> Router {
     Router::new()
         .route("/u", post(receive_upload)) // upload
-        .route("/i", post(img_receive_upload)) // 图片处理是单独的路由
+        .route("/i/u", post(img_receive_upload)) // 图片上传, 图片处理是单独的路由
+        .route("/i/1", post(img_operate)) // 图片变化, 图片处理是单独的路由
 }
 
 /**
@@ -50,6 +51,35 @@ async fn receive_upload(mut part: Multipart) -> Json<BB<Vec<String>>> {
         }
     }
     BB::success(vec).to()
+}
+
+async fn img_operate(payload: Option<Json<ImageOperateReq>>) -> Json<BB<Vec<Option<ImageInfo>>>> {
+    if let Some(Json(req)) = payload {
+        let f = FileSaver::url2path(&App::cachedir(), &req.url);
+
+        if !f.exists() || !f.is_file() {
+            // 该图片不存在
+            return BB::file_req_err().to();
+        }
+
+        let mut vec = vec![];
+        if let Some(op) = req.operate {
+            match op {
+                super::bean::image::ImageOperate::Ico => {
+                    use crate::helper::filehelper::image2ico;
+                    if let Ok(info) = image2ico(f, 128) {
+                        vec.push(Some(info));
+                    } else {
+                        vec.push(None) // 如果失败, 也要占位
+                    }
+                }
+                _ => {}
+            }
+        }
+        return BB::success(vec).to();
+    }
+
+    BB::fail().to()
 }
 
 async fn img_receive_upload(part: Multipart) -> Json<BB<Vec<Option<ImageInfo>>>> {
@@ -139,9 +169,8 @@ impl FileSaver {
 
         debug!("start write {:?} data to {:?}", path, fullpath.display());
 
-        use crate::helper::filehelper::{sure_file_new, sure_path};
-        sure_path(&fullpath); // 确保文件夹已创建
-        sure_file_new(&fullpath); // 确保文件是最新的
+        use crate::helper::filehelper::sure_file_new;
+        sure_file_new(&fullpath); //  确保文件夹已创建, 确保文件是最新的
 
         if Self::_write(&fullpath, data).await.is_ok() {
             return Ok(Self::path2url(&fullpath)); // 返回网络地址

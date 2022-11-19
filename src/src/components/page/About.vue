@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { testStartTime } from "../../common/api";
+import { testStartTime } from "../../common/api/api";
 
 const show = ref()
 testStartTime().then(r => show.value = r.toString()).catch(e => console.log(e))

@@ -1,4 +1,4 @@
-export function size2str(size: number) {
+export function fileSize2str(size: number) {
     if (size < 1024) {
         return size.toString().concat("b")
     } else if (size < 1024 * 1024) {

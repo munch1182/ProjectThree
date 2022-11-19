@@ -9,7 +9,6 @@ mod plugin;
 mod server;
 
 use crate::plugin::pluginwin::TaruiWindowPlugin;
-use std::error::Error;
 
 fn main() {
     helper::init(); // 统一初始化
@@ -19,7 +18,7 @@ fn main() {
 
 fn create_ui() {
     tauri::Builder::default()
-        .setup(|app| setup(app))
+        // .setup(|app| setup(app))
         .invoke_handler(tauri::generate_handler![server_or_empty])
         .plugin(TaruiWindowPlugin::new())
         .run(tauri::generate_context!())
@@ -31,18 +30,18 @@ async fn server_or_empty() -> String {
     app::App::get_server_addr().unwrap_or(String::from(""))
 }
 
-fn setup(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
-    #[cfg(debug_assertions)]
-    open_dev(app);
-    Ok(())
-}
+// fn setup(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
+//     #[cfg(debug_assertions)]
+//     open_dev(app);
+//     Ok(())
+// }
 
-fn open_dev(_app: &mut tauri::App) {
-    // use log::info;
-    // use tauri::Manager;
-    // if let Some(w) = _app.get_window("main") {
-    //     w.open_devtools();
-    // } else {
-    //     info!("error to open devtools");
-    // }
-}
+// fn open_dev(_app: &mut tauri::App) {
+//     use log::info;
+//     use tauri::Manager;
+//     if let Some(w) = _app.get_window("main") {
+//         w.open_devtools();
+//     } else {
+//         info!("error to open devtools");
+//     }
+// }

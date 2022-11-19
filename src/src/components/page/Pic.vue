@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { computed } from '@vue/reactivity';
-import { ref } from 'vue'
-import { imgInput, ImageInfo } from "../../common/api/apifile";
-import { size2str } from "../../common/helper";
+import { ref, computed } from 'vue'
+import { imgInput, ImageInfo, img2icon } from "../../common/api/apifile";
+import { fileSize2str } from "../../common/helper";
+
+
+const operations = ref([
+    {
+        name: "变化", items: [{ name: "翻转" }, { name: "旋转" }]
+    }, {
+        name: "生成", items: [{ name: "生成ico" }]
+    }]);
 
 const infoRef = ref<ImageInfo>()
 const input = ref()
@@ -53,7 +60,7 @@ const lenStr = computed(() => {
     if (!v) {
         return undefined
     }
-    return size2str(v.len)
+    return fileSize2str(v.len)
 })
 
 function openImg() {
@@ -61,7 +68,11 @@ function openImg() {
 }
 
 function convertIcon() {
-
+    const curr = infoRef.value
+    if (!curr) return
+    img2icon(curr.url).then(l => {
+        console.log(l)
+    })
 }
 </script>
 
@@ -93,8 +104,21 @@ function convertIcon() {
                 <span class="text-[0.5rem] mt-1 text-gray-600">{{ lenStr }}</span>
             </div>
         </div>
-        <div class="flex flex-col" @click="convertIcon">
-            <input type="button" class="btn" value="生成icon">
+        <div>
+            <ul>
+                <li v-for="i in operations" class="mt-[var(--space-padding)]">
+                    <span class="text-base">{{ i.name }}</span>
+                    <div class="flex items-center mt-[var(--space-padding)]">
+                        <ul class="flex flex-row">
+                            <li v-for="o in i.items" class="mr-4">
+                                <div class="flex flex-col" @click="convertIcon">
+                                    <input type="button" class="btn" :value="o.name">
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
         </div>
     </div>
 </template>

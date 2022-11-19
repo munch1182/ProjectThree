@@ -61,9 +61,9 @@ impl<T> NetBB<T> {
         Self::other(1)
     }
 
-    // pub fn file_req_err() -> Self {
-    //     Self::other(21)
-    // }
+    pub fn file_req_err() -> Self {
+        Self::other(21)
+    }
 
     pub fn to(self) -> axum::Json<Self> {
         axum::Json(self)
