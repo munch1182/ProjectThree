@@ -53,27 +53,24 @@ async fn receive_upload(mut part: Multipart) -> Json<BB<Vec<String>>> {
     BB::success(vec).to()
 }
 
-async fn img_operate(payload: Option<Json<ImageOperateReq>>) -> Json<BB<Vec<Option<ImageInfo>>>> {
+async fn img_operate(
+    payload: Option<Json<Vec<ImageOperateReq>>>,
+) -> Json<BB<Vec<Option<ImageInfo>>>> {
     if let Some(Json(req)) = payload {
-        let f = FileSaver::url2path(&App::cachedir(), &req.url);
-
-        if !f.exists() || !f.is_file() {
-            // 该图片不存在
-            return BB::file_req_err().to();
-        }
-
         let mut vec = vec![];
-        if let Some(op) = req.operate {
-            match op {
-                super::bean::image::ImageOperate::Ico => {
-                    use crate::helper::filehelper::image2ico;
-                    if let Ok(info) = image2ico(f, 128) {
-                        vec.push(Some(info));
-                    } else {
-                        vec.push(None) // 如果失败, 也要占位
-                    }
-                }
-                _ => {}
+        for ele in req {
+            let f = FileSaver::url2path(&App::cachedir(), &ele.url);
+
+            if !f.exists() || !f.is_file() {
+                // 该图片不存在
+                return BB::file_req_err().to();
+            }
+
+            use crate::helper::filehelper::imgae_operate;
+            if let Ok(info) = imgae_operate(f, &ele.operate) {
+                vec.push(Some(info));
+            } else {
+                vec.push(None);
             }
         }
         return BB::success(vec).to();

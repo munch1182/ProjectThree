@@ -1,23 +1,42 @@
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-#[derive(Debug, Serialize_repr, Deserialize_repr)]
-#[repr(u8)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub enum ImageOperate {
-    Ico = 0,    // 将文件转为ico文件
-    Flip = 1,   // 翻转
-    Crop = 2,   // 剪切
-    Resize = 3, // 更改大小 / 更改后居中
-    Blur = 4,   // 模糊
-    Rotate = 5, // 旋转
+    Ico(u32),              // 将文件转为ico文件, 值为长和宽, 即尺寸
+    Flip(ImageFlipDirect), // 翻转
+    Crop(ImageCrop),       // 剪切
+    Resize(ImageResize),   // 更改大小 / 更改后居中
+    Blur(u32),             // 模糊
+    Rotate(u16),           // 旋转角度, 不能大于360
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize_repr, Deserialize_repr, PartialEq, Eq)]
+#[repr(u8)]
+pub enum ImageFlipDirect {
+    Horizontal = 0,
+    Vertical = 1,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ImageCrop {
+    pub x: u32,
+    pub y: u32,
+    pub w: u32,
+    pub h: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ImageResize {
+    pub w: u32,
+    pub h: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ImageOperateReq {
-    pub url: String,                    // 目标文件url,
-    pub operate: Option<ImageOperate>,  // 变化目标, 如果是变化而来, 则记录了变化的内容
-    pub value: Option<i32>,             // 变化值, 如果变化目标需要
-    pub dimen: Option<Vec<ImageDimen>>, // 目标大小, 如果只有大小, 则会改变该url指向的文件大小并返回, 如果都有, 则先变化, 再改变变化后的文件大小并返回
+    pub url: String,           // 目标文件url,
+    pub operate: ImageOperate, // 变化目标
 }
 
 #[serde_with::skip_serializing_none]
@@ -60,42 +79,40 @@ pub struct ImageDimen {
 
 #[cfg(test)]
 mod tests {
-    use serde_repr::{Deserialize_repr, Serialize_repr};
 
-    #[derive(Debug, Serialize_repr, Deserialize_repr)]
-    #[repr(u8)]
-    pub enum TestFlipDirect {
-        H = 0,
-        V = 1,
-    }
-
-    use serde::{Deserialize, Serialize};
-    #[derive(Debug, Deserialize, Serialize)]
-    pub enum TestImageOperate {
-        Ico,                        // 将文件转为ico文件
-        Flip(TestFlipDirect),       // 翻转
-        Crop((u32, u32, u32, u32)), // 剪切
-        Resize((u32, u32, bool)),   // 更改大小 / 更改后居中
-        Blur(u32),                  // 模糊
-        Rotate(u16),                // 旋转
-    }
-
-    #[derive(Debug, Deserialize, Serialize)]
-    pub struct TestBean {
-        name: String,
-        io: Option<TestImageOperate>,
-    }
+    use super::*;
     #[test]
-    fn test_json_enum() {
-        let result = serde_json::to_string(&TestImageOperate::Crop((0, 0, 16, 16))).unwrap();
-
-        println!("{:?}", result);
-
-        let bean = TestBean {
-            name: String::from("test"),
-            io: Some(TestImageOperate::Resize((48, 48, true))),
+    fn test_op() {
+        let resize = ImageOperate::Resize(ImageResize { w: 16, h: 16 });
+        let op = ImageOperateReq {
+            url: "/a/a.test".to_string(),
+            operate: resize,
         };
 
-        println!("{:?}", serde_json::to_string(&bean));
+        println!("{:?}", serde_json::to_string(&op).unwrap());
+
+        let str = r#"{"url":"/a/a.test","operate":{"resize":{"w":16,"h":16}}}"#;
+
+        let j: ImageOperateReq = serde_json::from_str(str).unwrap();
+        println!("{:?}", j);
+
+        assert_eq!(op, j);
+    }
+
+    #[test]
+    fn test_op_no_name() {
+        let op = ImageOperateReq {
+            url: "/a/a.test".to_string(),
+            operate: ImageOperate::Ico(128),
+        };
+
+        println!("{:?}", serde_json::to_string(&op).unwrap());
+
+        let str = r#"{"url":"/a/a.test","operate":{"ico": 128}}"#;
+
+        let j: ImageOperateReq = serde_json::from_str(str).unwrap();
+        println!("{:?}", j);
+
+        assert_eq!(op, j);
     }
 }

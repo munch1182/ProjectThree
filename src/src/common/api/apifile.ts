@@ -6,7 +6,7 @@ const URL_IMG_INPUT = URL_File + "/i/u"
 const URL_IMG_OPERA = URL_File + "/i/1"
 
 export type ImageDimen = { w: number, h: number }
-export type ImageInfo = { name: string, url: string, len: number, dimen: ImageDimen, operate?: number, value?: number, target?: string }
+export type ImageInfo = { name: string, url: string, len: number, dimen: ImageDimen, operate?: ImageOperateType, value?: number, target?: string }
 
 /**
  * 将图片上传并返回图片信息 
@@ -24,8 +24,13 @@ export const imgInput = async (f: File) => {
 }
 
 type ImageOperateReq = { url: string, operate?: ImageOperateType, dimen?: ImageDimen[] }
-export enum ImageOperateType {
-    Ico = 0 // 转为ico
+type ImageOperateType = {
+    "ico"?: number, // size
+    "flip"?: number, // 0为水平, 1为垂直
+    "crop"?: { x: number, y: number, w: number, h: number },
+    "resize"?: { w: number, h: number }, // 要修改成的宽高
+    "blur"?: number,
+    "rotate"?: number
 }
 /**
  * 上传image并转为icon, 返回的地址为icon的地址
@@ -33,14 +38,14 @@ export enum ImageOperateType {
  * 
  * return 返回的参数里总有原图片的url
  */
-export const img2icon = async (f: File | string) => {
-    return imageOperate(f, ImageOperateType.Ico)
+export const img2icon = async (f: File | string, size: number = 128) => {
+    return imageOperate(f, { "ico": size })
 }
 
 async function imageOperate(f: File | string, operate?: ImageOperateType, dimen?: ImageDimen[]): Promise<ImageInfo> {
     const url = await imgfileReqUrl(f);
     const req: ImageOperateReq = { url, operate, dimen }
-    return post(URL_IMG_OPERA, req)
+    return post(URL_IMG_OPERA, [req])
         .then<ImageInfo[]>(l => dataOrReject(l))
         .then(l => l[0])
         .then(async i => {

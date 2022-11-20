@@ -1,7 +1,10 @@
 use image::GenericImageView;
 use log::error;
 
-use crate::{app::App, server::bean::image::ImageInfo};
+use crate::{
+    app::App,
+    server::bean::image::{ImageInfo, ImageOperate},
+};
 use std::{
     fs::{self, DirBuilder},
     path::{Path, PathBuf},
@@ -61,7 +64,18 @@ pub fn image_read<P: AsRef<Path>>(p: P) -> anyhow::Result<ImageInfo> {
     return Err(anyhow::anyhow!("error to read image"));
 }
 
-pub fn image2ico<P: AsRef<Path>>(p: P, size: u32) -> anyhow::Result<ImageInfo> {
+pub fn imgae_operate<P: AsRef<Path>>(p: P, op: &ImageOperate) -> anyhow::Result<ImageInfo> {
+    match op {
+        ImageOperate::Ico(size) => return image2ico(p, *size),
+        ImageOperate::Flip(_) => todo!(),
+        ImageOperate::Crop(_) => todo!(),
+        ImageOperate::Resize(_) => todo!(),
+        ImageOperate::Blur(_) => todo!(),
+        ImageOperate::Rotate(_) => todo!(),
+    }
+}
+
+fn image2ico<P: AsRef<Path>>(p: P, size: u32) -> anyhow::Result<ImageInfo> {
     let p = p.as_ref();
 
     if !p.exists() {
@@ -102,7 +116,7 @@ pub fn image2ico<P: AsRef<Path>>(p: P, size: u32) -> anyhow::Result<ImageInfo> {
         let mut info = image_read(path)?;
 
         use crate::server::bean::image::ImageOperate::Ico;
-        info.from(&origin_info, Ico);
+        info.from(&origin_info, Ico(size));
         return Ok(info);
     }
     error!("error to create icon");
