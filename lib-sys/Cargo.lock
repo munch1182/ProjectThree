@@ -3,34 +3,17 @@
 version = 3
 
 [[package]]
-name = "img"
-version = "0.1.0"
-dependencies = [
- "lib",
- "sys",
-]
-
-[[package]]
-name = "lib"
-version = "0.1.0"
-
-[[package]]
-name = "rust-test"
-version = "0.1.0"
-dependencies = [
- "img",
- "lib",
- "sys",
-]
-
-[[package]]
-name = "sys"
+name = "file"
 version = "0.1.0"
 dependencies = [
  "lib",
  "winapi",
  "winreg",
 ]
+
+[[package]]
+name = "lib"
+version = "0.1.0"
 
 [[package]]
 name = "winapi"
