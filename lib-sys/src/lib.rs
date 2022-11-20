@@ -3,7 +3,7 @@ use std::path::PathBuf;
 mod dir;
 mod path;
 
-pub use path::FileHelper;
+pub use path::DirHelper;
 
 ///
 /// 保证该文件路径存在

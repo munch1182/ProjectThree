@@ -7,14 +7,15 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub struct FileHelper {
+#[derive(Debug)]
+pub struct DirHelper {
     cachedir: PathBuf,  // 缓存文件根目录
     configdir: PathBuf, // 配置文件根目录
     datadir: PathBuf,   // 数据文件根目录
     url_prefix: String, // 当路径转成url时, 在前面添加的路径
 }
 
-impl FileHelper {
+impl DirHelper {
     pub fn init(rootdirname: &'static str, url_prefix: &'static str) -> Result<Self, Error> {
         let user = lib::option2result!(super::dir::user())?;
         let rootdir = PathBuf::from(user).join(rootdirname);
@@ -55,7 +56,7 @@ impl FileHelper {
     pub fn path2url<P: AsRef<Path>>(&self, path: P) -> Result<String, Error> {
         let path = path.as_ref().to_path_buf();
 
-        let cache: &Path = err_to!(path.strip_prefix(&self.cachedir))?; // 对比path去掉cachedir的部分
+        let cache: &Path = err_to!(path.strip_prefix(&self.cachedir), "error when path2url")?; // 对比path去掉cachedir的部分
 
         let mut vec: Vec<OsString> = cache.iter().map(|x| x.to_os_string()).collect();
         vec.insert(0, OsString::from(&self.url_prefix)); // 在头部添加通用url路径
@@ -90,7 +91,7 @@ mod tests {
     // cargo.exe test -- path::tests::test_filehelper --exact --nocapture
     #[test]
     fn test_filehelper() -> Result<(), Error> {
-        let f = &FileHelper::init(".p3", "/a")?;
+        let f = &DirHelper::init(".p3", "/a")?;
         println!(
             "{}; {}; {};",
             f.dircache().display(),
@@ -103,7 +104,7 @@ mod tests {
     // cargo.exe test -- path::tests::test_filehelper_url_path --exact --nocapture
     #[test]
     fn test_filehelper_url_path() -> Result<(), Error> {
-        let f = &FileHelper::init(".p3", "/a")?;
+        let f = &DirHelper::init(".p3", "/a")?;
 
         let path = PathBuf::from(f.dircache()).join("img").join("a.png");
         let url = f.path2url(&path)?;
@@ -119,7 +120,7 @@ mod tests {
     // cargo.exe test -- path::tests::test_filehelper_path_url --exact --nocapture
     #[test]
     fn test_filehelper_path_url() -> Result<(), Error> {
-        let f = &FileHelper::init(".p3", "/a")?;
+        let f = &DirHelper::init(".p3", "/a")?;
 
         let url = format!("{}/img/a.png", "/a");
         let path = f.url2path(&url)?;
