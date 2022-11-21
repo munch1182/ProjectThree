@@ -1,12 +1,13 @@
 use lib::{err, err_to};
 use std::{
-    io::Error,
     path::{Path, PathBuf},
     sync::Mutex,
 };
 use sys::DirHelper;
 
-lazy_static::lazy_static! {
+use crate::Error;
+
+lib::lazy_static! {
     static ref DIR:Mutex<DirHelper> = Mutex::new(DirHelper::init(".p3", "/a").unwrap()); // 无法处理unwrap
 }
 
