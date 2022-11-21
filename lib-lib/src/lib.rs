@@ -1,8 +1,9 @@
-pub mod log;
+pub mod file;
 pub mod macros; // 宏
 pub mod str;
 
 pub use lazy_static::lazy_static;
+pub use log::{debug, error, info};
 
 pub use serde_json::{from_str, to_string};
 pub use serde_repr::{Deserialize_repr, Serialize_repr};

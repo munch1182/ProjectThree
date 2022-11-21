@@ -1,17 +1,15 @@
-use lib::{err, err_to};
+use lib::{err, err_to, Result};
 use std::{
     path::{Path, PathBuf},
     sync::Mutex,
 };
 use sys::DirHelper;
 
-use crate::Error;
-
 lib::lazy_static! {
     static ref DIR:Mutex<DirHelper> = Mutex::new(DirHelper::init(".p3", "/a").unwrap()); // 无法处理unwrap
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FileInfo {
     path: PathBuf,       // 本地文件路径
     url: Option<String>, // 对外保留的url
@@ -28,20 +26,45 @@ pub struct FileInfo {
 ///
 ///
 impl FileInfo {
-    pub fn newfile<P: AsRef<Path>>(p: P) -> lib::Result<Self> {
+    ///
+    /// 新建一个file
+    ///
+    pub fn newfile<P: AsRef<Path>>(p: P) -> Result<Self> {
         let path = p.as_ref();
         let path = err_to!(DIR.lock())?.dircache().join(path);
         Ok(Self { path, url: None })
     }
 
+    ///
+    /// 从url中获取file
+    ///
+    pub fn fromurl(url: &String) -> Result<Self> {
+        let url = url.clone();
+        let path = err_to!(DIR.lock())?.url2path(&url)?;
+        Ok(Self {
+            path,
+            url: Some(url),
+        })
+    }
+
     /// 获取该对象生成的url
-    pub fn url(&mut self) -> Result<String, Error> {
+    pub fn url(&mut self) -> Result<String> {
         if let Some(url) = &self.url {
             return Ok(url.clone());
         }
         let url = err_to!(DIR.lock())?.path2url(&self.path)?;
         self.url = Some(url.clone());
         Ok(url)
+    }
+
+    /// 返回该文件所在的文件夹
+    pub fn dir(&self) -> PathBuf {
+        let mut p = self.path();
+        if p.is_dir() {
+            return p;
+        }
+        p.pop();
+        return p;
     }
 
     pub fn path(&self) -> PathBuf {

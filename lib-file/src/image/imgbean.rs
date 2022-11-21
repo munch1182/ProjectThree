@@ -1,5 +1,9 @@
-use lib::{Deserialize_repr, Serialize_repr};
+use std::path::PathBuf;
+
+use lib::{err, err_to, Deserialize_repr, Result, Serialize_repr};
 use serde::{Deserialize, Serialize};
+
+use crate::file::file::FileInfo;
 
 /// 对外可用的图片静态url
 pub type ImageAssetUrl = String;
@@ -29,7 +33,7 @@ pub type ImageAssetUrl = String;
 ///    ],
 /// };
 /// ```
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ImageRequest {
     url: ImageAssetUrl,              // 指向的图片url
     operate: Vec<Vec<ImageOperate>>, // 要进行的操作, 每外层集合生成一张图片, 内部集合为该图片要操作的流程
@@ -40,8 +44,121 @@ pub struct ImageRequest {
 ///
 #[derive(Debug)]
 pub struct ImageOperateHelper {
-    _req: ImageRequest,   // 请求
-    _tmp: Vec<ImageInfo>, // 处理过程中产生的所有图片
+    file: FileInfo, // 指向的图片url
+    ///
+    /// (Vec<ImageOperate>,Option<FileInfo>):
+    /// Vec<ImageOperate>要执行的步骤, 每一步都会保存成一个图片(但是未返回的图片绘制返回后删除)
+    /// 可以请求生成执行多个步骤生成多个图片, 即最外层的vec
+    operate: Vec<(Vec<ImageOperate>, Vec<FileInfo>)>,
+}
+
+// impl Deref for ImageOperateHelper {
+//     type Target = Vec<(Vec<ImageOperate>, Vec<FileInfo>)>;
+
+//     fn deref(&self) -> &Self::Target {
+//         &self.operate
+//     }
+// }
+
+// impl DerefMut for ImageOperateHelper {
+//     fn deref_mut(&mut self) -> &mut Self::Target {
+//         &mut self.operate
+//     }
+// }
+
+impl ImageOperateHelper {
+    pub fn from(req: &ImageRequest) -> Result<Self> {
+        let file = FileInfo::fromurl(&req.url)?;
+        let operate = req.operate.iter().map(|f| (f.clone(), vec![])).collect();
+        Ok(Self { file, operate })
+    }
+
+    pub fn result(&self) -> Vec<Vec<FileInfo>> {
+        let vec = self
+            .operate
+            .iter()
+            .map(|x| x.1.clone())
+            .collect::<Vec<Vec<FileInfo>>>();
+        vec
+    }
+
+    pub fn operate(&mut self) -> lib::Result<&mut Self> {
+        let f = &self.file;
+
+        let filepath = f.path();
+
+        let name_no_ext = &filepath.file_stem().ok_or(err!("file no name"))?;
+        let name_had_ext = &filepath.file_name().ok_or(err!(""))?;
+
+        let newdir = f.dir().join(name_no_ext.clone()); //与文件同名的文件夹
+        lib::file::dir_new(&newdir)?; // 清空旧文件
+        let newfile = newdir.join(name_had_ext.clone()); // 一个新文件夹同名文件地址, 供lib中的方法使用
+
+        for (opera, result) in &mut self.operate {
+            let src = Box::new(filepath.to_path_buf());
+
+            lib::debug!("operate: --> {:?}", opera);
+
+            let mut iter = opera.iter();
+            while let Some(o) = iter.next() {
+                match o {
+                    ImageOperate::Convert(_) => todo!(),
+                    ImageOperate::Resize(resize) => {
+                        let (w, h) = (resize.w, resize.h);
+
+                        // todo 改为错误忽略
+                        // 重命名文件
+                        let dest =
+                            lib::file::file_name_add(&newfile, format!("_{}x{}", w, h).as_str())?;
+
+                        lib::file::file_new(&dest)?;
+                        Self::_resize(&dest, src.to_path_buf(), w, h)?;
+
+                        let newf = FileInfo::newfile(&dest)?;
+
+                        lib::debug!("resize: --> {}", dest.display());
+
+                        result.push(newf);
+                    }
+                    ImageOperate::Flip(_) => todo!(),
+                    ImageOperate::Blur(_) => todo!(),
+                    ImageOperate::Rotate(_) => todo!(),
+                    ImageOperate::Crop(_) => todo!(),
+                }
+            }
+        }
+        Ok(self)
+    }
+
+    fn _resize(dest: &PathBuf, src: PathBuf, w: u32, h: u32) -> Result<()> {
+        let di = err_to!(image::open(src))?;
+        let di = di.resize(w, h, image::imageops::FilterType::Nearest);
+        err_to!(di.save(dest))?; // 保存到文件
+        Ok(())
+    }
+
+    ///// 转为ico, dest目标文件路径, src: 源文件路径(ico存放多种大小的图片)
+    // fn _convert_icon(dest: PathBuf, src: Vec<PathBuf>) -> Result<()> {
+    //     let mut icon_dir = ico::IconDir::new(ico::ResourceType::Icon);
+    //     let mut ok_count = 0u8;
+    //     while let Some(s) = src.iter().next() {
+    //         if let Ok(f) = std::fs::File::open(s) {
+    //             if let Ok(image) = ico::IconImage::read_png(f) {
+    //                 if let Ok(b) = ico::IconDirEntry::encode(&image) {
+    //                     icon_dir.add_entry(b);
+    //                     ok_count += 1;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     if ok_count == 0 {
+    //         return Err(err!("error to convert icon"));
+    //     }
+    //     lib::file::file_new(&dest).ok();
+    //     let f = std::fs::File::create(dest)?;
+    //     icon_dir.write(f)?;
+    //     Ok(())
+    // }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -155,6 +272,27 @@ mod tests {
         };
         let req2 = lib::err_to!(lib::to_string(&req2))?;
         println!("req2: {}", req2);
+        Ok(())
+    }
+
+    // cargo.exe test -- image::imgbean::tests::test_opera --exact --nocapture
+    #[test]
+    fn test_opera() -> lib::Result<()> {
+        let req2 = ImageRequest {
+            url: "/a/a.png".to_string(),
+            operate: vec![
+                vec![ImageOperate::Resize(ImageResize { w: 16, h: 16 })],
+                vec![ImageOperate::Resize(ImageResize { w: 32, h: 32 })],
+                vec![ImageOperate::Resize(ImageResize { w: 48, h: 48 })],
+                vec![ImageOperate::Resize(ImageResize { w: 16, h: 16 })],
+            ],
+        };
+
+        println!("{:?}", req2);
+        let mut helper = ImageOperateHelper::from(&req2)?;
+        let result = helper.operate()?.result();
+
+        println!("{:?}", result);
         Ok(())
     }
 }
