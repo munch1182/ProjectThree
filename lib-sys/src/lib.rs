@@ -1,7 +1,9 @@
+use lib::Result;
 use std::path::PathBuf;
 
 mod dir;
 mod path;
+pub mod reg;
 
 pub use path::DirHelper;
 
@@ -11,7 +13,7 @@ pub use path::DirHelper;
 /// 如果传入的是文件夹, 确保该文件夹存在
 /// 如果传入的是文件, 确保该文件所在的文件夹存在
 ///
-pub fn path_check<P: AsRef<std::path::Path>>(path: P) -> Result<(), std::io::Error> {
+pub fn path_check<P: AsRef<std::path::Path>>(path: P) -> Result<()> {
     let mut path = path.as_ref().to_path_buf();
     if path.extension().is_some() {
         if !path.pop() {
@@ -30,7 +32,7 @@ pub fn path_check<P: AsRef<std::path::Path>>(path: P) -> Result<(), std::io::Err
 /// 如果传入的是文件夹, 则会确保该文件夹已存在
 /// 如果传入的是文件, 会确保该文件夹已存在, 且如果该文件已存在, 则会删除该文件
 ///  
-pub fn file_new<P: AsRef<std::path::Path>>(path: P) -> Result<(), std::io::Error> {
+pub fn file_new<P: AsRef<std::path::Path>>(path: P) -> Result<()> {
     path_check(path.as_ref())?;
     let path = path.as_ref();
     if path.extension().is_some() {
@@ -50,7 +52,7 @@ pub fn file_new<P: AsRef<std::path::Path>>(path: P) -> Result<(), std::io::Error
 ///
 /// [file_rename]: file_rename
 ///
-pub fn file_name_add<P, S>(path: P, add: &S) -> Result<PathBuf, std::io::Error>
+pub fn file_name_add<P, S>(path: P, add: &S) -> Result<PathBuf>
 where
     P: AsRef<std::path::Path>,
     S: AsRef<std::ffi::OsStr> + ?Sized,
@@ -61,7 +63,7 @@ where
 fn _addname_default(
     oldname: &std::ffi::OsStr,
     addname: &std::ffi::OsStr,
-) -> Result<std::ffi::OsString, std::io::Error> {
+) -> Result<std::ffi::OsString> {
     let oldname = oldname.to_os_string();
     use lib::{err, option2result};
     let oldnamestr = option2result!(oldname.to_str())?;
@@ -104,10 +106,10 @@ fn _addname_default(
 /// }
 /// ```
 ///
-pub fn file_rename<P, F, S>(path: P, newname: F) -> Result<PathBuf, std::io::Error>
+pub fn file_rename<P, F, S>(path: P, newname: F) -> Result<PathBuf>
 where
     P: AsRef<std::path::Path>,
-    F: Fn(&std::ffi::OsStr) -> Result<S, std::io::Error>,
+    F: Fn(&std::ffi::OsStr) -> Result<S>,
     S: AsRef<std::ffi::OsStr> + std::convert::AsRef<std::path::Path>,
 {
     use lib::{err, option2result};
@@ -128,7 +130,7 @@ mod tests {
 
     // cargo.exe test -- file::tests::test_file --exact --nocapture
     #[test]
-    fn test_file() -> Result<(), std::io::Error> {
+    fn test_file() -> Result<()> {
         // 与src同级
         let file = std::path::PathBuf::from("log").join("a.log");
         println!("{:?}", file.display());
@@ -143,7 +145,7 @@ mod tests {
 
     // cargo.exe test -- tests::test_file_name_add --exact --nocapture
     #[test]
-    fn test_file_name_add() -> Result<(), std::io::Error> {
+    fn test_file_name_add() -> Result<()> {
         let path: PathBuf = ["a", "b", "c"].iter().collect();
         let newname = file_name_add(&path, "_bak")?;
         println!(
