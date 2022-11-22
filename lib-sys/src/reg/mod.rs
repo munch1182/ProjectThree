@@ -1,4 +1,14 @@
-use lib::Result;
+//!
+//! 对注册表项的值进行增删改查
+//!
+//! ```rust
+//! let reg = sys::reg::RegHelper::new(sys::reg::HKEY_USERS);
+//! let netset = reg.open("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings")?;
+//! let proxy = netset.read("ProxyEnable")?;
+//! let _enable: u32 = proxy.try_into()?;
+//!```
+//!
+use liblib::{str, Result};
 use std::{ffi::OsStr, ptr};
 pub use winapi::shared::minwindef::HKEY;
 use winapi::{
@@ -7,10 +17,40 @@ use winapi::{
         RegCloseKey, RegDeleteValueW, RegOpenKeyExW, RegQueryValueExW, RegSetValueExW, REGSAM,
     },
 };
-use winreg::enums::HKEY_CLASSES_ROOT;
 mod regtype;
 pub use regtype::*;
+/// 将reg类型重新导出
+macro_rules! re_exports {
+    ([$($v:ident),*]) => {
+        $(pub use winapi::um::winreg::$v;)*
+    };
+}
 
+re_exports!([
+    HKEY_CURRENT_USER,
+    HKEY_CLASSES_ROOT,
+    HKEY_LOCAL_MACHINE,
+    HKEY_USERS,
+    HKEY_PERFORMANCE_DATA,
+    HKEY_PERFORMANCE_TEXT,
+    HKEY_PERFORMANCE_NLSTEXT,
+    HKEY_CURRENT_CONFIG,
+    HKEY_DYN_DATA,
+    HKEY_CURRENT_USER_LOCAL_SETTINGS
+]);
+
+///
+/// 注册表项对象
+///
+/// # Examples
+///
+/// ```rust
+/// let reg = sys::reg::RegHelper::new(sys::reg::HKEY_USERS);
+/// let netset = reg.open("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings")?;
+/// let proxy = netset.read("ProxyEnable")?;
+/// let _enable: u32 = proxy.try_into()?;
+/// ```
+///
 #[derive(Debug)]
 pub struct RegHelper {
     hkey: HKEY,
@@ -37,7 +77,9 @@ macro_rules! value2enum {
         #[allow(non_camel_case_types)]
         #[derive(Debug,Clone,PartialEq)]
         pub enum $t{
-            $( $v = winapi::um::winnt::$v as isize ),*
+            $(  ///
+                $v = winapi::um::winnt::$v as isize
+            ),*
         }
     )
 }
@@ -57,9 +99,14 @@ value2enum!(RegType,"注册表的值的类型的枚举, 从winapi::um::winnt转�
     REG_QWORD
 ]);
 
+///
+/// 注册表值对象
+///
 #[derive(Debug)]
 pub struct RegValue {
+    /// 注册表值的数据
     pub bytes: Vec<u8>,
+    /// 注册表值的对象
     pub vtype: RegType,
 }
 
@@ -68,26 +115,25 @@ pub struct RegValue {
 ///
 /// 使用时, 要注意权限, 即REGSAM
 ///
-/// 定位: [open_subkey]
-/// 查询: [read]
-/// 更改: [set]
 ///
 impl RegHelper {
+    /// new
+    /// [HKEY]
     pub const fn new(reg: HKEY) -> Self {
         Self { hkey: reg }
     }
 
     /// 默认用于全部权限
-    pub fn open_subkey<P: AsRef<OsStr>>(&self, path: P) -> Result<RegHelper> {
-        self.open_subkey_with_flags(path, KEY_ALL_ACCESS)
+    pub fn open<P: AsRef<OsStr>>(&self, path: P) -> Result<RegHelper> {
+        self.open_with(path, KEY_ALL_ACCESS)
     }
 
     /// 打开注册表时要注意权限, 如果无权限无法操作
-    pub fn open_subkey_with_flags<P>(&self, path: P, perms: REGSAM) -> Result<RegHelper>
+    pub fn open_with<P>(&self, path: P, perms: REGSAM) -> Result<RegHelper>
     where
         P: AsRef<OsStr>,
     {
-        let name = lib::str::to_u16(path);
+        let name = str::to_u16(path);
         let mut newhkey: HKEY = ptr::null_mut();
         unsafe {
             let status = RegOpenKeyExW(self.hkey, name.as_ptr(), 0, perms, &mut newhkey);
@@ -98,7 +144,7 @@ impl RegHelper {
 
     /// 读取值
     pub fn read<P: AsRef<OsStr>>(&self, key: P) -> Result<RegValue> {
-        let key = lib::str::to_u16(key);
+        let key = str::to_u16(key);
         let mut dlen: DWORD = 0;
         let mut dtype: DWORD = 0;
         unsafe {
@@ -130,7 +176,7 @@ impl RegHelper {
 
     /// 新加或者修改一对键值
     pub fn set<P: AsRef<OsStr>>(&self, key: P, value: &RegValue) -> Result<()> {
-        let name = lib::str::to_u16(key);
+        let name = str::to_u16(key);
         let dtype = value.vtype.clone() as DWORD;
         let len = value.bytes.len() as u32;
         use winapi::shared::minwindef::BYTE;
@@ -144,7 +190,7 @@ impl RegHelper {
 
     /// 删除键值对
     pub fn del<P: AsRef<OsStr>>(&self, key: P) -> Result<()> {
-        let name = lib::str::to_u16(key);
+        let name = str::to_u16(key);
         unsafe {
             let status = RegDeleteValueW(self.hkey, name.as_ptr());
             sys_result!(status)?;
@@ -164,36 +210,5 @@ impl RegHelper {
 impl Drop for RegHelper {
     fn drop(&mut self) {
         self.close().unwrap_or(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use winreg::enums::HKEY_CURRENT_USER;
-
-    use super::*;
-
-    // cargo.exe test -- reg::tests::test_reg --exact --nocapture
-    #[test]
-    fn test_reg() -> Result<()> {
-        let helper = RegHelper::new(HKEY_CURRENT_USER);
-        let sub = helper
-            .open_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings")?;
-
-        let pe: u32 = sub.read("ProxyEnable")?.try_into()?;
-        println!("ProxyEnable: {:?}", pe);
-        let pe: String = sub.read("ProxyOverride")?.try_into()?;
-        println!("ProxyOverride: {:?}", pe);
-
-        let test_k = "test_reg_key";
-        let test_v = lib::str::u16_to_u8(&lib::str::to_u16("test_reg_value"));
-        // sub.set(test_k, &RegValue::from(test_v))?;
-
-        let pe = sub.read(test_k)?;
-        println!("{:?}", pe);
-
-        // sub.del(test_k)?;
-
-        Ok(())
     }
 }

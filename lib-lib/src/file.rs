@@ -1,7 +1,13 @@
+//!
+//! [dir_check]
+//! [dir_new]
+//! [file_new]
+//! [file_name_suffix]
+//! [file_rename]
+//! 
 use std::path::PathBuf;
 
-use crate::Result;
-use crate::{err, option2result};
+use crate::{err, Result};
 
 ///
 /// 保证该文件路径存在
@@ -71,7 +77,7 @@ pub fn file_new<P: AsRef<std::path::Path>>(path: P) -> Result<()> {
 ///
 /// [file_rename]: file_rename
 ///
-pub fn file_name_add<P, S>(path: P, add: &S) -> Result<PathBuf>
+pub fn file_name_suffix<P, S>(path: P, add: &S) -> Result<PathBuf>
 where
     P: AsRef<std::path::Path>,
     S: AsRef<std::ffi::OsStr> + ?Sized,
@@ -84,11 +90,11 @@ fn _addname_default(
     addname: &std::ffi::OsStr,
 ) -> Result<std::ffi::OsString> {
     let oldname = oldname.to_os_string();
-    let oldnamestr = option2result!(oldname.to_str())?;
+    let oldnamestr = oldname.to_str().ok_or(err!())?;
 
     // 如果带后缀, 则在后缀前添加
     if oldnamestr.contains(".") {
-        let addnamestr = option2result!(addname.to_str())?;
+        let addnamestr = addname.to_str().ok_or(err!())?;
         let mut names: Vec<&str> = oldnamestr.split(".").collect();
         let len = names.len();
         if len > 1 {
@@ -111,8 +117,8 @@ fn _addname_default(
 ///
 /// newaneme: 直接添加到后面
 ///
-/// ```
-/// file_reanme(path,|n| _addname(name, "_suffix.bak"))
+/// ```ignore
+/// file_reanme(path,|name| _addname(name, "_suffix.bak"))
 ///
 /// /**
 ///  * 直接将名称添加在后面
@@ -132,53 +138,11 @@ where
 {
     let mut path = path.as_ref().to_path_buf();
 
-    let filename = option2result!(path.file_name())?;
+    let filename = path.file_name().ok_or(err!())?;
     let _newname = newname(filename)?;
 
     path.pop();
     let result = path.join(_newname);
 
     Ok(result)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // cargo.exe test -- lib::tests::test_file --exact --nocapture
-    #[test]
-    fn test_file() -> Result<()> {
-        // 与src同级
-        let file = std::path::PathBuf::from("log").join("a.log");
-        println!("{:?}", file.display());
-        dir_check(&file)?;
-
-        // 删除旧文件
-        file_new(&file)?;
-
-        // 创建新文件
-        std::fs::write(&file, "11")
-    }
-
-    // cargo.exe test -- lib::test_file_name_add --exact --nocapture
-    #[test]
-    fn test_file_name_add() -> Result<()> {
-        let path: PathBuf = ["a", "b", "c"].iter().collect();
-        let newname = file_name_add(&path, "_bak")?;
-        println!(
-            "path: {} => newname: {}",
-            &path.display(),
-            &newname.display()
-        );
-
-        let path: PathBuf = ["a", "b", "c.txt"].iter().collect();
-        let newname = file_name_add(&path, "_bak")?;
-        println!(
-            "path: {} => newname: {}",
-            &path.display(),
-            &newname.display()
-        );
-
-        Ok(())
-    }
 }

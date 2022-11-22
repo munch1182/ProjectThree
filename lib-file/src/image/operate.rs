@@ -1,9 +1,6 @@
-use lib::{err, Result};
+use liblib::{err, Result};
 
-use crate::{
-    file::file::FileInfo,
-    image::imgbean::{ImageOperate, ImageOperateExecute},
-};
+use crate::{file::FileInfo, image::imgbean::ImageOperate};
 
 use super::imgbean::ImageRequest;
 
@@ -11,7 +8,7 @@ use super::imgbean::ImageRequest;
 /// 实际处理操作类
 ///
 #[derive(Debug)]
-pub struct ImageOperateHelper {
+pub(crate) struct ImageOperateHelper {
     file: FileInfo, // 指向的图片url
     ///
     /// (Vec<ImageOperate>,Option<FileInfo>):
@@ -21,7 +18,7 @@ pub struct ImageOperateHelper {
 }
 
 impl ImageOperateHelper {
-    pub fn from(req: &ImageRequest) -> Result<Self> {
+    pub(crate) fn from(req: &ImageRequest) -> Result<Self> {
         let file = FileInfo::fromurl(&req.url)?;
         let operate = req.operate.iter().map(|f| (f.clone(), vec![])).collect();
         Ok(Self { file, operate })
@@ -36,7 +33,7 @@ impl ImageOperateHelper {
         vec
     }
 
-    pub fn operate(&mut self) -> lib::Result<Vec<Vec<Option<FileInfo>>>> {
+    pub(crate) fn operate(&mut self) -> liblib::Result<Vec<Vec<Option<FileInfo>>>> {
         let f = &self.file;
 
         let filepath = f.path();
@@ -44,26 +41,55 @@ impl ImageOperateHelper {
         let name_no_ext = &filepath.file_stem().ok_or(err!("file no name"))?;
 
         let newdir = f.dir().join(name_no_ext.clone()); //与文件同名的文件夹
-        lib::file::dir_new(&newdir)?; // 清空旧文件
+        liblib::file::dir_new(&newdir)?; // 清空旧文件
 
         for (opera, result) in &mut self.operate {
             let mut iter = opera.iter();
-            while let Some(o) = iter.next() {
+            while let Some(operate) = iter.next() {
                 let dir = &newdir.to_path_buf();
                 let src = &filepath.to_path_buf();
-                let r = match o {
-                    ImageOperate::Convert(p) => p.execute(dir, src),
-                    ImageOperate::Resize(p) => p.execute(dir, src),
-                    ImageOperate::Flip(p) => p.execute(dir, src),
-                    ImageOperate::Blur(p) => p.execute(dir, src),
-                    ImageOperate::Rotate(p) => p.execute(dir, src),
-                    ImageOperate::Crop(p) => p.execute(dir, src),
-                    ImageOperate::Huerotate(p) => p.execute(dir, src),
+                let r = match operate {
+                    ImageOperate::Convert(c) => match c {
+                        crate::image::imgbean::ImageConvert::Ico => {
+                            Self::_convert_ico(result, dir, src).ok()
+                        }
+                        #[allow(unreachable_patterns)]
+                        _ => operate.execute(dir, src),
+                    },
+                    _ => operate.execute(dir, src),
                 };
-                lib::debug!("operate: --> {:?}: {}", opera, r.is_some());
                 result.push(r);
             }
+            liblib::debug!("operate: --> {:?}: {}", opera, result.last().is_some());
+            println!("operate: --> {:?}: {}", opera, result.last().is_some());
         }
         Ok(self._result())
+    }
+
+    fn _convert_ico<P: AsRef<std::path::Path>>(
+        result: &mut Vec<Option<FileInfo>>,
+        dir: P,
+        src: P,
+    ) -> Result<FileInfo> {
+        let mut icon_dir = ico::IconDir::new(ico::ResourceType::Icon);
+        let src = src.as_ref();
+        let mut iter = result.iter();
+        while let Some(opt) = iter.next() {
+            if let Some(f) = opt {
+                let file = std::fs::File::open(f.path())?;
+                let image = ico::IconImage::read_png(file)?;
+                icon_dir.add_entry(ico::IconDirEntry::encode(&image)?);
+            }
+        }
+        let file = std::fs::File::open(src)?;
+        let image = ico::IconImage::read_png(file)?;
+        icon_dir.add_entry(ico::IconDirEntry::encode(&image)?);
+
+        let mut name = src.file_stem().ok_or(err!())?.to_os_string();
+        name.push(".ico");
+        let path = dir.as_ref().join(name);
+        let f = std::fs::File::create(&path)?;
+        icon_dir.write(f)?;
+        Ok(FileInfo::new(path))
     }
 }

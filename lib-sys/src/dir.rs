@@ -61,30 +61,3 @@ fn dir(rfid: shtypes::REFKNOWNFOLDERID) -> Option<OsString> {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // cargo.exe test -- dir::tests::test --exact --nocapture
-    #[test]
-    fn test() {
-        // println!("----");
-        // let dir = roaming();
-        // println!("roaming_app_data: {:?}", dir);
-        // assert!(dir.is_some());
-
-
-        // let dir = local();
-        // println!("local_app_data: {:?}", dir);
-        // assert!(dir.is_some());
-
-        // let dir = music();
-        // println!("music: {:?}", dir);
-        // assert!(dir.is_some());
-
-        let dir = user();
-        println!("user: {:?}", dir);
-        assert!(dir.is_some());
-    }
-}

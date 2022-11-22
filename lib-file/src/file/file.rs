@@ -1,14 +1,20 @@
-use lib::{err, err_to, Result};
+use liblib::{err, err_to, Result};
 use std::{
     path::{Path, PathBuf},
     sync::Mutex,
 };
-use sys::DirHelper;
 
-lib::lazy_static! {
+use crate::file::path::DirHelper;
+
+liblib::lazy_static! {
     static ref DIR:Mutex<DirHelper> = Mutex::new(DirHelper::init(".p3", "/a").unwrap()); // 无法处理unwrap
 }
 
+///
+/// 关联文件和url
+///
+/// url在必要时才会生成, path会一直有值, 但该文件未被真实被创建
+///
 #[derive(Debug, Clone)]
 pub struct FileInfo {
     path: PathBuf,       // 本地文件路径
@@ -18,12 +24,11 @@ pub struct FileInfo {
 /// 当上传一个文件时, 新建一个FileInfo
 ///
 /// exp:
-/// ```
+/// ``` no
 /// let f = FileInfo::newfile("a.png");
-/// fs::write(f.path())
+/// fs::write(f.path())?:
 /// return f.url()
 /// ```
-///
 ///
 impl FileInfo {
     pub fn new<P: AsRef<Path>>(p: P) -> Self {
@@ -76,25 +81,5 @@ impl FileInfo {
 
     pub fn path(&self) -> PathBuf {
         self.path.to_path_buf()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // cargo.exe test -- file::file::tests::test_file_info --exact --nocapture
-    #[test]
-    fn test_file_info() -> lib::Result<()> {
-        let name = "a.txt";
-        let mut img = FileInfo::newfile(name)?;
-        std::fs::write(&img.path, "test fileinfo")?;
-        println!(
-            "name: {} => path: {} => url: {:?}",
-            name,
-            &img.path().display(),
-            &img.url()?
-        );
-        Ok(())
     }
 }

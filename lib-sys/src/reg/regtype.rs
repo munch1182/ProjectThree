@@ -1,8 +1,20 @@
+//!
+//! RegValue的相关转换
+//! 
+//! [RegValue]
+//!  
 use std::{ffi::OsString, os::windows::prelude::OsStringExt};
 
 use super::{RegType, RegValue};
 
+///
+/// 将其它值转为RegValue
+/// 
 pub trait ToRegValue: Sized {
+
+    ///
+    /// 将其它值转为RegValue
+    /// 
     fn to_reg_value(&self) -> RegValue;
 }
 
@@ -11,7 +23,7 @@ macro_rules! to_reg_value_sz {
     ($t:ty$(,$l:lifetime)*) => {
         impl<$($l,)*> ToRegValue for $t {
             fn to_reg_value(&self) -> RegValue{
-                use lib::str::to_u8_code;
+                use liblib::str::to_u8_code;
                 RegValue {
                     bytes: to_u8_code(self),
                     vtype: RegType::REG_SZ
@@ -30,7 +42,7 @@ macro_rules! to_reg_value_multi_sz {
     ($t:ty$(,$l:lifetime)*) => {
         impl<$($l,)*> ToRegValue for Vec<$t> {
             fn to_reg_value(&self) -> RegValue {
-                use lib::str::{to_u16,u16_to_u8};
+                use liblib::str::{to_u16,u16_to_u8};
                 let mut os_str = self.into_iter()
                 .map(to_u16)
                 .collect::<Vec<_>>()
@@ -74,7 +86,7 @@ impl ToRegValue for u64 {
 
 /// RegValue ==> any
 impl TryInto<String> for RegValue {
-    type Error = lib::Error;
+    type Error = liblib::Error;
 
     fn try_into(self) -> Result<String, Self::Error> {
         match self.vtype {
@@ -94,13 +106,13 @@ impl TryInto<String> for RegValue {
                 }
                 Ok(s)
             }
-            _ => Err(lib::err!("cannot get type {:?} from regvalue", self.vtype)),
+            _ => Err(liblib::err!("cannot get type {:?} from regvalue", self.vtype)),
         }
     }
 }
 
 impl TryInto<Vec<String>> for RegValue {
-    type Error = lib::Error;
+    type Error = liblib::Error;
 
     fn try_into(self) -> Result<Vec<String>, Self::Error> {
         match self.vtype {
@@ -118,13 +130,13 @@ impl TryInto<Vec<String>> for RegValue {
                 let v = s.split('\u{0}').map(|x| x.to_owned()).collect();
                 Ok(v)
             }
-            _ => Err(lib::err!("cannot get type {:?} from regvalue", self.vtype)),
+            _ => Err(liblib::err!("cannot get type {:?} from regvalue", self.vtype)),
         }
     }
 }
 
 impl TryInto<OsString> for RegValue {
-    type Error = lib::Error;
+    type Error = liblib::Error;
 
     fn try_into(self) -> Result<OsString, Self::Error> {
         match self.vtype {
@@ -141,13 +153,13 @@ impl TryInto<OsString> for RegValue {
                 let v = OsString::from_wide(words);
                 Ok(v)
             }
-            _ => Err(lib::err!("cannot get type {:?} from regvalue", self.vtype)),
+            _ => Err(liblib::err!("cannot get type {:?} from regvalue", self.vtype)),
         }
     }
 }
 
 impl TryInto<Vec<OsString>> for RegValue {
-    type Error = lib::Error;
+    type Error = liblib::Error;
 
     fn try_into(self) -> Result<Vec<OsString>, Self::Error> {
         match self.vtype {
@@ -167,13 +179,13 @@ impl TryInto<Vec<OsString>> for RegValue {
                     .collect();
                 Ok(v)
             }
-            _ => Err(lib::err!("cannot get type {:?} from regvalue", self.vtype)),
+            _ => Err(liblib::err!("cannot get type {:?} from regvalue", self.vtype)),
         }
     }
 }
 
 impl TryInto<u32> for RegValue {
-    type Error = lib::Error;
+    type Error = liblib::Error;
 
     fn try_into(self) -> Result<u32, Self::Error> {
         match self.vtype {
@@ -181,13 +193,13 @@ impl TryInto<u32> for RegValue {
                 let n = unsafe { *(self.bytes.as_ptr() as *const u32) };
                 Ok(n)
             }
-            _ => Err(lib::err!("cannot get type {:?} from regvalue", self.vtype)),
+            _ => Err(liblib::err!("cannot get type {:?} from regvalue", self.vtype)),
         }
     }
 }
 
 impl TryInto<u64> for RegValue {
-    type Error = lib::Error;
+    type Error = liblib::Error;
 
     fn try_into(self) -> Result<u64, Self::Error> {
         match self.vtype {
@@ -195,7 +207,7 @@ impl TryInto<u64> for RegValue {
                 let n = unsafe { *(self.bytes.as_ptr() as *const u64) };
                 Ok(n)
             }
-            _ => Err(lib::err!("cannot get type {:?} from regvalue", self.vtype)),
+            _ => Err(liblib::err!("cannot get type {:?} from regvalue", self.vtype)),
         }
     }
 }

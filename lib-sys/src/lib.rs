@@ -1,6 +1,11 @@
+//!
+//! 与系统相关的基础功能库
+//!
+#![deny(missing_docs)]
+
 mod dir;
-mod path;
-pub mod reg;
+mod reg;
 
-pub use path::DirHelper;
+pub use reg::*;
 
+pub use dir::user;

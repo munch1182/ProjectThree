@@ -1,13 +1,13 @@
 [package]
-name = "file"
+name = "libfile"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sys = { path="../lib-sys" }
-lib = { path="../lib-lib" }
+libsys = { path="../lib-sys" }
+liblib = { path="../lib-lib" }
 
 image = "0.24"
 ico = "0.2"

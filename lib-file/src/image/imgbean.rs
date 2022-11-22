@@ -1,17 +1,15 @@
 use std::path::Path;
 
-use lib::{Deserialize_repr, Serialize_repr};
+use liblib::{Deserialize_repr, Serialize_repr};
 use serde::{Deserialize, Serialize};
 
-use crate::file::file::FileInfo;
+use crate::file::FileInfo;
 
 /// 对外可用的图片静态url
 pub type ImageAssetUrl = String;
 
 ///
-/// 外部发起的图片操作请求
-///
-/// 作为回复的imageinfo(返回时应该是个集合)
+/// *外部发起的图片操作请求
 ///
 /// ```no
 ///  let req = r#"
@@ -35,83 +33,142 @@ pub type ImageAssetUrl = String;
 /// ```
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ImageRequest {
-    pub url: ImageAssetUrl,              // 指向的图片url
-    pub operate: Vec<Vec<ImageOperate>>, // 要进行的操作, 每外层集合生成一张图片, 内部集合为该图片要操作的流程
+    /// 指向的图片url
+    pub url: ImageAssetUrl,
+    /// 要进行的操作, 每外层集合生成一张图片, 内部集合为该图片要操作的流程
+    pub operate: Vec<Vec<ImageOperate>>,
 }
 
+impl ImageRequest {
+    /// 对请求进行执行, 返回的是执行后的文件, 失败则为None
+    pub fn operate(&mut self) -> liblib::Result<Vec<Vec<Option<FileInfo>>>> {
+        let mut helper = super::operate::ImageOperateHelper::from(self)?;
+        helper.operate()
+    }
+}
+
+/// *图片信息, todo
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ImageInfo {
     url: ImageAssetUrl, // 对外可用的静态url
     len: u64,           // 文件大小
     dimen: ImageDimen,  // 文件尺寸
     #[serde(skip_serializing_if = "Option::is_none")]
-    operate: Option<Vec<ImageOperate>>, // 经过的文件操作, 是原图则为null, 注意: 操作可能是一系列的, 但是ImageOperate::Resize只能是最后一步
+    operate: Option<Vec<ImageOperate>>, // 经过的文件操作, 是原图则为null, 注意: 操作可能是一系列的
     #[serde(skip_serializing_if = "Option::is_none")]
     target: Option<ImageAssetUrl>, // 如果该值经过了变化, 该值对应原图像的url路径, 原图只能是调用时的目标, 中间变换的忽略
 }
 
+/// 描述图片尺寸
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImageDimen {
+    /// 宽
     pub w: u32,
+    /// 高
     pub h: u32,
 }
 
+///
+/// *图片能进行的操作, 注意与rust与json的转换的不同
+///
 #[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub enum ImageOperate {
-    Convert(ImageConvert),     // 将当前图片类型转为其它图片类型
-    Resize(ImageResize),       // 更改大小
-    Flip(ImageFlipDirect),     // 图片翻转
-    Blur(ImageBlur),           // 模糊
-    Rotate(ImageRotate),       // 旋转角度, 不能大于360
-    Crop(ImageCrop),           // 剪切
-    Huerotate(ImageHuerotate), // 色彩旋转
+    /// 将当前图片类型转为其它图片类型
+    Convert(ImageConvert),
+    /// 更改大小
+    Resize(ImageResize),
+    /// 图片翻转
+    Flip(ImageFlipDirect),
+    /// 模糊
+    Blur(ImageBlur),
+    /// 旋转角度, 不能大于360
+    Rotate(ImageRotate),
+    /// 剪切
+    Crop(ImageCrop),
+    /// 色彩旋转
+    Huerotate(ImageHuerotate),
 }
 
+impl ImageOperate {
+    pub(super) fn execute<P: AsRef<Path>>(&self, dir: P, src: P) -> Option<FileInfo> {
+        match self {
+            ImageOperate::Convert(p) => p.execute(dir, src),
+            ImageOperate::Resize(p) => p.execute(dir, src),
+            ImageOperate::Flip(p) => p.execute(dir, src),
+            ImageOperate::Blur(p) => p.execute(dir, src),
+            ImageOperate::Rotate(p) => p.execute(dir, src),
+            ImageOperate::Crop(p) => p.execute(dir, src),
+            ImageOperate::Huerotate(p) => p.execute(dir, src),
+        }
+    }
+}
+
+/// 色彩旋转
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy)]
 pub struct ImageHuerotate {
+    /// 色彩旋转
     pub rotate: i32,
 }
 
+/// 图片模糊
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy)]
 pub struct ImageBlur {
-    pub blur: u32,
+    /// 模糊, blur/100
+    pub blur: u8,
 }
 
+/// 图片剪切
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy)]
 pub struct ImageCrop {
+    /// x = 0
     pub x: u32,
+    /// y = 0
     pub y: u32,
+    /// 剪切 x+w
     pub w: u32,
+    /// 剪切 y+h
     pub h: u32,
 }
 
+/// 图片选中, 只支持固定的角度
 #[derive(Debug, Serialize_repr, Deserialize_repr, PartialEq, Clone, Copy)]
 #[repr(u16)]
 pub enum ImageRotate {
+    /// 90°
     R90 = 90,
+    /// 180°
     R180 = 180,
+    /// 270°
     R270 = 270,
 }
 
+/// 图片翻转
 #[derive(Debug, Serialize_repr, Deserialize_repr, PartialEq, Clone, Copy)]
 #[repr(u8)]
 pub enum ImageFlipDirect {
+    /// 水平方向翻转
     Horizontal = 0,
+    /// 垂直方法翻转
     Vertical = 1,
 }
 
+/// 更改图片大小
 #[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 pub struct ImageResize {
+    /// 宽
     pub w: u32,
+    /// 高
     pub h: u32,
 }
 
+/// 图片类型转换
 #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 #[repr(u8)]
 pub enum ImageConvert {
-    Ico = 0, // ico比较特殊, 前置操作更改了多了size, 就会将这些图片添加进ico中
+    /// ico比较特殊, 前置操作更改了多少size, 都会将其添加进ico中
+    Ico = 0,
 }
 
 impl ImageOperateExecute for ImageConvert {}
@@ -132,13 +189,15 @@ pub(super) trait ImageOperateExecute:
     ///
     /// 返回结果, 如果失败返回none
     ///
-    fn execute<P: AsRef<Path>>(&self, _dir: P, _src: P) -> Option<FileInfo> {
-        let dir = _dir.as_ref();
-        let src = _src.as_ref();
+    fn execute<P: AsRef<Path>>(&self, dir: P, src: P) -> Option<FileInfo> {
+        let dir = dir.as_ref();
+        let src = src.as_ref();
         if let Ok(_f) = self.newname(dir, src) {
-            if let Ok(di) = image::open(_src) {
-                self.execute_by_img(&di);
-                return Some(_f);
+            if let Ok(di) = image::open(src) {
+                let di = self.execute_by_img(&di);
+                if di.save(_f.path()).is_ok() {
+                    return Some(_f);
+                }
             }
         }
         None
@@ -146,7 +205,9 @@ pub(super) trait ImageOperateExecute:
 }
 impl ImageOperateExecuteByImg for ImageConvert {
     fn execute_by_img(&self, _di: &image::DynamicImage) -> image::DynamicImage {
-        todo!()
+        match self {
+            ImageConvert::Ico => unimplemented!(), // 对于ico, 需要单独处理
+        }
     }
 }
 impl ImageOperateExecuteByImg for ImageRotate {
@@ -242,13 +303,14 @@ pub(super) trait ImageOperateNewName {
     ///
     /// a.png => a_16x16.png
     ///
-    fn newname<P: AsRef<Path>>(&self, _dir: P, _src: P) -> lib::Result<FileInfo> {
+    fn newname<P: AsRef<Path>>(&self, _dir: P, _src: P) -> liblib::Result<FileInfo> {
         let dir = _dir.as_ref().to_path_buf();
         let src = _src.as_ref();
-        use lib::err;
-        let mut f = lib::option2result!(src.file_stem())?.to_os_string();
-        let ext = lib::option2result!(src.extension())?;
+        use liblib::err;
+        let mut f = src.file_stem().ok_or(err!("no name"))?.to_os_string();
+        let ext = src.extension().ok_or(err!("no ext"))?;
         f.push(self.name());
+        f.push(".");
         f.push(ext);
         Ok(FileInfo::new(dir.join(f)))
     }

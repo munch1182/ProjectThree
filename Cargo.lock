@@ -136,17 +136,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "file"
-version = "0.1.0"
-dependencies = [
- "ico",
- "image",
- "lib",
- "serde",
- "sys",
-]
-
-[[package]]
 name = "flate2"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -288,7 +277,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "03087c2bad5e1034e8cace5926dec053fb3790248370865f5117a7d0213354c8"
 
 [[package]]
-name = "lib"
+name = "libc"
+version = "0.2.137"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
+
+[[package]]
+name = "libfile"
+version = "0.1.0"
+dependencies = [
+ "ico",
+ "image",
+ "liblib",
+ "libsys",
+ "serde",
+]
+
+[[package]]
+name = "liblib"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
@@ -298,10 +304,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "libc"
-version = "0.2.137"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
+name = "libserver"
+version = "0.1.0"
+
+[[package]]
+name = "libsys"
+version = "0.1.0"
+dependencies = [
+ "liblib",
+ "winapi",
+]
 
 [[package]]
 name = "lock_api"
@@ -481,10 +493,10 @@ dependencies = [
 name = "rust-test"
 version = "0.1.0"
 dependencies = [
- "file",
- "lib",
- "server",
- "sys",
+ "libfile",
+ "liblib",
+ "libserver",
+ "libsys",
 ]
 
 [[package]]
@@ -548,10 +560,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "server"
-version = "0.1.0"
-
-[[package]]
 name = "smallvec"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -575,15 +583,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "sys"
-version = "0.1.0"
-dependencies = [
- "lib",
- "winapi",
- "winreg",
 ]
 
 [[package]]
@@ -699,12 +698,3 @@ name = "winapi-x86_64-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
-
-[[package]]
-name = "winreg"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80d0f4e272c85def139476380b12f9ac60926689dd2e01d4923222f40580869d"
-dependencies = [
- "winapi",
-]
