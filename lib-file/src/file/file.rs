@@ -26,13 +26,20 @@ pub struct FileInfo {
 ///
 ///
 impl FileInfo {
+    pub fn new<P: AsRef<Path>>(p: P) -> Self {
+        Self {
+            path: p.as_ref().to_path_buf(),
+            url: None,
+        }
+    }
+
     ///
     /// 新建一个file
     ///
     pub fn newfile<P: AsRef<Path>>(p: P) -> Result<Self> {
         let path = p.as_ref();
         let path = err_to!(DIR.lock())?.dircache().join(path);
-        Ok(Self { path, url: None })
+        Ok(Self::new(path))
     }
 
     ///
