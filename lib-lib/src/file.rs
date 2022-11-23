@@ -1,10 +1,5 @@
 //!
-//! 文件相关逻辑
-//! [dir_check]
-//! [dir_new]
-//! [file_new]
-//! [file_name_suffix]
-//! [file_rename]
+//! 文件相关基础逻辑
 //!
 use std::path::PathBuf;
 

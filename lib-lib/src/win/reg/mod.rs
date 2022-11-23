@@ -8,7 +8,7 @@
 //! let _enable: u32 = proxy.try_into()?;
 //!```
 //!
-use liblib::{str, Result};
+use crate::{str, Result};
 use std::{ffi::OsStr, ptr};
 pub use winapi::shared::minwindef::HKEY;
 use winapi::{

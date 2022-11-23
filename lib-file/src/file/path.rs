@@ -26,7 +26,7 @@ impl DirHelper {
     /// 在user()文件夹下创建rootdirname文件夹, 提供url_prefix以供文件和url相互转换
     ///
     pub fn init(rootdirname: &'static str, url_prefix: &'static str) -> Result<Self, Error> {
-        let user = libsys::user().ok_or(err!("no dir"))?;
+        let user = liblib::win::user().ok_or(err!("no dir"))?;
         let rootdir = PathBuf::from(user).join(rootdirname);
         let cachedir = rootdir.to_path_buf().join("cache");
         let configdir = rootdir.to_path_buf().join("config");

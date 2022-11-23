@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libsys = { path="./lib-sys" }
-liblib = { path="./lib-lib" }
-libfile = { path="./lib-file" }
-libserver = { path="./lib-server" }
+liblib = { path = "./lib-lib", features = ["win"] }
+libfile = { path = "./lib-file" }
+libserver = { path = "./lib-server" }
