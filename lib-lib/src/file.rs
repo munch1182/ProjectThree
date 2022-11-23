@@ -1,10 +1,11 @@
 //!
+//! 文件相关逻辑
 //! [dir_check]
 //! [dir_new]
 //! [file_new]
 //! [file_name_suffix]
 //! [file_rename]
-//! 
+//!
 use std::path::PathBuf;
 
 use crate::{err, Result};
