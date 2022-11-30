@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 
 const routes = [
     {
@@ -8,12 +8,11 @@ const routes = [
     {
         path: '/home',
         name: 'home',
-        // 需要导入实际文件地址
         component: () => import('./components/Home.vue')
     }
 ]
 
 export default createRouter({
-    history: createWebHashHistory(),
+    history: createWebHistory(),
     routes
 })

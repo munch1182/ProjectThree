@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import Editor from './Editor.vue';
+
 </script>
 
 <template>
-  hello world
+  <Editor />
 </template>
 
 <style scoped>
