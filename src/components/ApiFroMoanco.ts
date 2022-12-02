@@ -5,10 +5,10 @@ type Monaco = M;
 const NAME = 'api';
 const THEME = 'apiTheme';
 
-const keywords = ['GET', 'POST'];
+const keywords = ['GET', 'POST', 'MOCK', 'OK', 'ERR', 'MUST', 'SET'];
 const operators = ['=>', '=', '+', '|', '###'];
 const typeKeywords = [
-    'str', 'bool', 'num',
+    'str', 'bool', 'num', 'array',
     'u8', 'u16', 'u32', 'u64',
     'i8', 'i16', 'i32', 'i64',
     'f16', 'f32'];
@@ -16,11 +16,14 @@ const typeKeywords = [
 //todo类型关键字和操作符颜色
 // [正则, token, color]
 const colorDefine: [RegExp, string, string][] = [
-    [/###/, 'split', '#ff3d00'], // 分隔符: 固定###
+    [/###/, 'split', '#d16951'], // 分隔符: 固定###
     [/#.*$/, 'comment', '#438a55'], // 注释: 以#开头直到结尾
     [/@([\w]*)/, 'define', '#3ac1f1'], // 定义变量: @开头直到非字符
-    [/\b(GET|POST|MOCK-REQ|MOCK-RES)\b/, 'fun', '#004d99'], // 方法关键字
+    [/\b(GET|POST|MOCK|OK|ERR|MUST|SET)\b/, 'keyword', '#004d99'], // 方法关键字
     [/"[^"]*"/, 'string', '#ce723b'], // 字符串: 以"开头以"结尾中间没有"的部分
+    [/\b(str|bool|num|u8|u16|u32|u64|i8|i16|i32|i64|f16|f32|array)\b/, 'typekey', '#3ac9b0'], // todo 使用typeKeywords去匹配
+    // [/({|}|[|]|<|>|\(|\))/, 'operator', '#ffff00'], // todo 使用括号去匹配
+    // [/\/[^\s]*/, 'url', '#ff3d00'],
 ]
 const tokenRoot = colorDefine.map(i => { return [i[0], i[1]] as [RegExp, string] })
 const colorRules = colorDefine.map(i => { return { token: i[1], foreground: i[2] } })
@@ -46,9 +49,9 @@ function register(monaco: Monaco) {
         inherit: true,
         rules: colorRules,
         colors: {}
-    })
+    });
     monaco.languages.registerCompletionItemProvider(NAME, {
-        triggerCharacters: ['G', 'g', 'p', 'P', 'M', 'm'],
+        triggerCharacters: ['G', 'g', 'p', 'P', 'M', 'm', '#'],
         provideCompletionItems: function (model: any, position: any) {
             var word = model.getWordUntilPosition(position);
             var range = {
@@ -74,22 +77,58 @@ function register(monaco: Monaco) {
                         range: range
                     },
                     {
-                        label: 'MOCK-REQ',
+                        label: 'MOCK',
                         kind: monaco.languages.CompletionItemKind.Function,
-                        insertText: 'MOCK-REQ:',
-                        detail: 'mock请求',
+                        insertText: 'MOCK',
+                        detail: 'mock请求和响应',
                         range: range
                     },
                     {
-                        label: 'MOCK-RES',
-                        kind: monaco.languages.CompletionItemKind.Function,
-                        insertText: 'MOCK-RES:',
-                        detail: 'mock响应',
+                        label: 'request',
+                        kind: monaco.languages.CompletionItemKind.Keyword,
+                        insertText: [
+                            '##',
+                            '${0}',
+                            '###'
+                        ].join('\n'),
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        detail: 'mock请求和响应',
                         range: range
                     },
                 ]
             };
         }
+    });
+    monaco.languages.setLanguageConfiguration(NAME, {
+        brackets: [
+            ['{', '}'],
+            ['(', ')'],
+            ['<', '>'],
+        ],
+        autoClosingPairs: [
+            { open: '{', close: '}' },
+            { open: '(', close: ')' },
+            { open: '<', close: '>' },
+            { open: '###', close: '###', notIn: ['string', 'comment'] },
+        ]
+    });
+    monaco.languages.registerHoverProvider(NAME, {
+        provideHover: function (model, position, token) {
+            const w = model.getWordAtPosition(position);
+            const line = model.getLineContent(position.lineNumber);
+            if (w && line) {
+                const word = w.word;
+                // todo 需要判断是否在 @变量 的位置内, 且是在使用时
+                if (line.includes(`@${word}`)) {
+                    return {
+                        contents: [
+                            { value: `${word}` },
+                            { value: '显示变量值' }
+                        ]
+                    }
+                }
+            }
+        },
     })
 }
 
@@ -142,7 +181,7 @@ function addCommand(monaco: Monaco, editor: any) {
             id: 'run',
             command: {
                 id: id,
-                title: 'Run'
+                title: 'RUN'
             }
         }
     });
